@@ -41,7 +41,7 @@ jobs:
       - name: Coverage 🙈
         run: npx hardhat coverage
 
-      - name: Deploy 🚀
-        run: |
-          npx hardhat node &
-          npx hardhat run scripts/deploy.ts --network localhost
+      # - name: Deploy 🚀
+      #   run: |
+      #     npx hardhat node &
+      #     npx hardhat run scripts/deploy.ts --network localhost
