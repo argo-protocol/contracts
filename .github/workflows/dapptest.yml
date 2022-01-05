@@ -15,7 +15,7 @@ jobs:
           name: dapp
 
       - name: Install dependencies
-        run: nix-shell --run 'make'
+        run: nix-shell --run 'npx hardhat compile'
 
       - name: Check gas snapshots
         run: nix-shell --run 'dapp check-snapshot'
