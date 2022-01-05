@@ -217,7 +217,7 @@ describe("ZeroInterestMarket", () => {
 
                 expect(await market.userCollateral(borrower.address)).to.equal(`10${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(`304500000000000000000`);
-            })
+            });
         });
 
         describe("repayAndWithdraw", () => {
@@ -355,6 +355,8 @@ describe("ZeroInterestMarket", () => {
                 expect(collateralToken.transfer).to.be.calledWith(liquidator.address, '5500000000000000000');
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, `5${E18}`);
             });
+
+            it("cannot liquidate themself");
         });
     });
 })

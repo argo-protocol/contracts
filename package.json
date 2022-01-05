@@ -1,6 +1,8 @@
 {
   "scripts": {
     "test": "yarn typechain && hardhat test",
+    "fuzz": "dapp test",
+    "deep-fuzz": "DEEP_FUZZ=true dapp test",
     "compile": "hardhat compile",
     "coverage": "yarn typechain && hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"./test/**/*.ts\"",
     "deploy": "hardhat deploy:Greeter",
