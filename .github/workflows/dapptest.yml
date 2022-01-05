@@ -14,12 +14,6 @@ jobs:
         with:
           name: dapp
 
-      - name: Install 🔧
-        run: npm install
-
-      - name: Compile 🛠
-        run: npx hardhat compile
-
       - name: Install dependencies
         run: nix-shell --run 'make'
 
