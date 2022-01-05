@@ -1,6 +1,6 @@
 name: "dapp test"
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   tests:
@@ -8,24 +8,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Cache 📦
-        uses: actions/cache@v1
-        with:
-          path: ~/.npm # npm cache files are stored in `~/.npm` on Linux/macOS
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-${{ env.cache-name }}-
-            ${{ runner.os }}-build-
-            ${{ runner.os }}-
-      - name: Setup Node Environment ⬢
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14      
       - uses: actions/setup-node@v2
       - uses: cachix/install-nix-action@v14
       - uses: cachix/cachix-action@v10
         with:
           name: dapp
+
       - name: Install dependencies
         run: nix-shell --run 'make'
 
