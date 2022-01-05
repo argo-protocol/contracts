@@ -81,6 +81,7 @@ describe("ZeroInterestMarket", () => {
                 await market.connect(borrower).borrow(BORROW_AMOUNT);
                 expect(debtToken.transfer).to.be.calledWith(borrower.address, BORROW_AMOUNT);
             });
+
             it("borrow event emitted", async () => {
                 const BORROW_AMOUNT = `10${E18}`;
                 debtToken.transfer.returns(true);
@@ -88,13 +89,12 @@ describe("ZeroInterestMarket", () => {
                     to.emit(market, "Borrow").withArgs(borrower.address, BORROW_AMOUNT);
             });
 
-            it("transfers the fee amount to the treasury", async () => {
+            it("reserves the fee amount for the treasury", async () => {
                 const BORROW_AMOUNT = `10${E18}`;
                 const FEE_AMOUNT = '150000000000000000'; // $0.15
                 debtToken.transfer.returns(true);
                 await market.connect(borrower).borrow(BORROW_AMOUNT);
-
-                expect(debtToken.transfer).to.be.calledWith(treasury.address, FEE_AMOUNT);
+                expect(await market.feesCollected()).to.equal(FEE_AMOUNT);
             });
 
             it("sets user's total debt to borrowed + fee", async () => {
