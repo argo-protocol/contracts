@@ -33,6 +33,8 @@ contract ZeroInterestMarket is IMarket {
     uint public lastPrice;
     uint constant public LAST_PRICE_PRECISION = 1e18;
 
+    uint public feesCollected;
+
     uint public maxLoanToValue;
     uint constant public LOAN_TO_VALUE_PRECISION = 1e5;
     uint public borrowRate;
@@ -87,7 +89,7 @@ contract ZeroInterestMarket is IMarket {
 
         require(isUserSolvent(msg.sender), "Market: exceeds Loan-to-Value");
 
-        debtToken.safeTransfer(treasury, borrowRateFee);
+        feesCollected = feesCollected + borrowRateFee;
         debtToken.safeTransfer(msg.sender, _amount);
 
         emit Borrow(msg.sender, _amount);
@@ -143,6 +145,13 @@ contract ZeroInterestMarket is IMarket {
         collateralToken.safeTransfer(msg.sender, liquidatedCollateral);
 
         emit Liquidate(msg.sender, repayAmount, liquidatedCollateral);
+    }
+
+    function harvestFees() external {
+        uint fees = feesCollected;
+        feesCollected = 0;
+
+        debtToken.transfer(treasury, fees);
     }
 
     function updatePrice() external override returns (uint) {
