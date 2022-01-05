@@ -5,11 +5,7 @@ on: [push]
 jobs:
   tests:
     runs-on: ubuntu-latest
-    # we need this to map platform names as used by github to
-    # the attribute names defined in release.nix
-    include:
-        - os: ubuntu-latest
-          os_attr: linux
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
