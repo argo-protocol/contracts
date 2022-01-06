@@ -183,6 +183,11 @@ describe("ZeroInterestMarket", () => {
                 expect(await market.getUserLTV(borrower.address)).to.equal("60000");
             });
 
+            it("withdrawal exceeds collateral balance", async () => {
+                await expect(market.connect(borrower).withdraw(`11${E18}`))
+                .to.be.revertedWith("Market: withdrawal exceeds collateral balance");
+            });  
+
             it("reverts if LTV is exceeded (bounds check)", async () => {
                 await expect(market.connect(borrower).withdraw(`1541900000000000000`))
                     .to.be.revertedWith("Market: exceeds Loan-to-Value");
