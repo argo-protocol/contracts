@@ -82,7 +82,7 @@ contract ZeroInterestMarketTest is DSTest {
 
         uint initialPrice = 100000e18; // $100,000
         uint borrowAmount = 45000e18;
-        uint depositAmount = 1e2 + ((borrowAmount * market.LOAN_TO_VALUE_PRECISION() * market.LAST_PRICE_PRECISION()) / (initialPrice * _maxLoanToValue));        
+        uint depositAmount = 1e2 * ((borrowAmount * market.LOAN_TO_VALUE_PRECISION() * market.LAST_PRICE_PRECISION()) / (initialPrice * _maxLoanToValue));
 
         debtToken.mint(address(liquidator), _repayAmount);
         debtToken.mint(address(market), 60000e18);
