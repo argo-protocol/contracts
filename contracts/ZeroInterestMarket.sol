@@ -3,18 +3,19 @@ pragma solidity ^0.8.0;
 
 import { IOracle } from "./interfaces/IOracle.sol";
 import { IMarket } from "./interfaces/IMarket.sol";
+import { IDebtToken } from "./interfaces/IDebtToken.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * A lending market that only supports a flat borrow fee and no interest rate
  * 
  * TODO: Create this using a factory
  */
-contract ZeroInterestMarket is IMarket {
+contract ZeroInterestMarket is Ownable, IMarket {
     using SafeERC20 for IERC20;
-
+    using SafeERC20 for IDebtToken;
 
     // Events
     event Deposit(address indexed from, address indexed to, uint256 amount);
@@ -22,12 +23,13 @@ contract ZeroInterestMarket is IMarket {
     event Borrow(address indexed from, address indexed to, uint256 amount);
     event Repay(address indexed from, address indexed to, uint256 amount);
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral);
+    event TreasuryUpdated(address newTreasury);
 
     uint constant internal MAX_INT = 2**256 - 1;
 
     address public treasury;
     IERC20 public collateralToken;
-    IERC20 public debtToken;
+    IDebtToken public debtToken;
 
     IOracle public oracle;
     uint public lastPrice;
@@ -50,7 +52,7 @@ contract ZeroInterestMarket is IMarket {
     constructor(address _treasury, address _collateralToken, address _debtToken, address _oracle, uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty) {
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
-        debtToken = IERC20(_debtToken);
+        debtToken = IDebtToken(_debtToken);
         oracle = IOracle(_oracle);
         maxLoanToValue = _maxLoanToValue;
         borrowRate = _borrowRate;
@@ -207,6 +209,24 @@ contract ZeroInterestMarket is IMarket {
         lastPrice = oracle.fetchPrice();
         // TODO: emit event
         return lastPrice;
+    }
+
+    /**
+     * @notice reduces the available supply to be borrowed by transferring debt tokens to owner.
+     * @param _amount number of tokens to remove
+     */
+    function reduceSupply(uint _amount) external onlyOwner {
+        debtToken.safeTransfer(this.owner(), _amount);
+    }
+
+    /**
+     * @notice updates the treasury that receives the fees
+     * @param _treasury address of the new treasury
+     */
+    function setTreasury(address _treasury) external onlyOwner {
+        require(_treasury != address(0), "Market: 0x0 treasury address");
+        treasury = _treasury;
+        emit TreasuryUpdated(_treasury);
     }
 
     //////
