@@ -17,10 +17,8 @@ contract ZeroInterestMarketTest is DSTest {
     ERC20Mock collateralToken;
     DebtToken debtToken;
     TestOracle oracle;
-    uint MAX_LTV = 50000;
-    uint BORROW_FEE = 1500;
 
-    function setUp() public {
+    function init(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty) public {
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
         debtToken = new DebtToken();
@@ -30,9 +28,9 @@ contract ZeroInterestMarketTest is DSTest {
             address(collateralToken),
             address(debtToken),
             address(oracle),
-            MAX_LTV,
-            BORROW_FEE,
-            10000
+            maxLoanToValue,
+            borrowRate,
+            liquidationPenalty
         );
         liquidator = new TestAccount("liquidator", address(market), address(debtToken));
     }
@@ -41,19 +39,20 @@ contract ZeroInterestMarketTest is DSTest {
     //// FUZZ TESTS
     /////////
 
-    function testBorrowMaintainsLTV(uint _price, uint _borrowAmount) public {
+    function testBorrowMaintainsLTV(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty, uint _price, uint _borrowAmount) public {
+       init(maxLoanToValue, borrowRate, liquidationPenalty);
         if (_borrowAmount > 1e40) return;
         if (_price > 1e40) return;
         if (_price < 1e5) return;
 
-        uint debtAmount = _borrowAmount + (_borrowAmount * BORROW_FEE / market.BORROW_RATE_PRECISION());
+        uint debtAmount = _borrowAmount + (_borrowAmount * market.borrowRate() / market.BORROW_RATE_PRECISION());
         debtToken.mint(address(market), debtAmount);
         oracle.setPrice(_price);
         collateralToken.approve(address(market), 1e18);
 
         uint ltv = debtAmount * market.LOAN_TO_VALUE_PRECISION() / _price;
 
-        if (ltv <= MAX_LTV) {
+        if (ltv <= market.maxLoanToValue()) {
             market.depositAndBorrow(1e18, _borrowAmount);
             assertEq(debtToken.balanceOf(address(this)), _borrowAmount);
         } else {
@@ -67,7 +66,8 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount) public {
+    function testLiquidateAlwaysProfitableForLiquidator(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty, uint _newPrice, uint _repayAmount) public {
+        init(maxLoanToValue, borrowRate, liquidationPenalty);
         if (_newPrice > 1e60) return;
         if (_newPrice > 1e5) return;
         if (_repayAmount > 1e60) return;

@@ -25,5 +25,5 @@ jobs:
         run: nix-shell --run 'dapp test'
         env:
           # Only fuzz deeply if we're pushing to main or this is a PR to main:
-          #TODO this is always false, need to ensure it works on CI
+          # works only for 'pull_request'
           DEEP_FUZZ: ${{ github.ref == 'refs/heads/main' || github.base_ref == 'main' }}
