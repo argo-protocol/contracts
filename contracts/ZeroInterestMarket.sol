@@ -15,6 +15,14 @@ import "hardhat/console.sol";
 contract ZeroInterestMarket is IMarket {
     using SafeERC20 for IERC20;
 
+
+    // Events
+    event Deposit(address indexed from, uint256 amount);
+    event Withdraw(address indexed from, uint256 amount);
+    event Borrow(address indexed from, uint256 amount);
+    event Repay(address indexed from, uint256 amount);
+    event Liquidate(address indexed from, uint256 repayDebt, uint256 liquidatedCollateral);
+
     uint constant internal MAX_INT = 2**256 - 1;
 
     address public treasury;
@@ -52,9 +60,12 @@ contract ZeroInterestMarket is IMarket {
         totalCollateral = totalCollateral + _amount;
 
         collateralToken.safeTransferFrom(msg.sender, address(this), _amount);
+
+         emit Deposit(msg.sender, _amount);
     }
 
     function withdraw(uint _amount) public override {
+        require(_amount <= userCollateral[msg.sender], "Market: withdrawal exceeds collateral balance");
         _updatePrice();
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
@@ -63,6 +74,8 @@ contract ZeroInterestMarket is IMarket {
         require(isUserSolvent(msg.sender), "Market: exceeds Loan-to-Value");
 
         collateralToken.safeTransfer(msg.sender, _amount);
+
+        emit Withdraw(msg.sender, _amount);
     }
 
     function borrow(uint _amount) public override {
@@ -76,6 +89,8 @@ contract ZeroInterestMarket is IMarket {
 
         debtToken.safeTransfer(treasury, borrowRateFee);
         debtToken.safeTransfer(msg.sender, _amount);
+
+        emit Borrow(msg.sender, _amount);
     }
 
     function repay(uint _amount) public override {
@@ -84,6 +99,8 @@ contract ZeroInterestMarket is IMarket {
         userDebt[msg.sender] = userDebt[msg.sender] - _amount;
 
         debtToken.safeTransferFrom(msg.sender, address(this), _amount);
+
+         emit Repay(msg.sender, _amount);
     }
 
     function depositAndBorrow(uint _depositAmount, uint _borrowAmount) external override {
@@ -124,6 +141,8 @@ contract ZeroInterestMarket is IMarket {
 
         debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
         collateralToken.safeTransfer(msg.sender, liquidatedCollateral);
+
+        emit Liquidate(msg.sender, repayAmount, liquidatedCollateral);
     }
 
     function updatePrice() external override returns (uint) {
