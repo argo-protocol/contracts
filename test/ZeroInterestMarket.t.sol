@@ -18,7 +18,7 @@ contract ZeroInterestMarketTest is DSTest {
     DebtToken debtToken;
     TestOracle oracle;
 
-    function init(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty) public {
+    function init(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty) public {
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
         debtToken = new DebtToken();
@@ -28,9 +28,9 @@ contract ZeroInterestMarketTest is DSTest {
             address(collateralToken),
             address(debtToken),
             address(oracle),
-            maxLoanToValue,
-            borrowRate,
-            liquidationPenalty
+            _maxLoanToValue,
+            _borrowRate,
+            _liquidationPenalty
         );
         liquidator = new TestAccount("liquidator", address(market), address(debtToken));
     }
@@ -39,9 +39,9 @@ contract ZeroInterestMarketTest is DSTest {
     //// FUZZ TESTS
     /////////
 
-    function testBorrowMaintainsLTV(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty, uint _price, uint _borrowAmount) public {
-       init(maxLoanToValue, borrowRate, liquidationPenalty);
-        if (borrowRate > 1e10) return;
+    function testBorrowMaintainsLTV(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _price, uint _borrowAmount) public {
+       init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
+        if (_borrowRate > 1e10) return;
         if (_borrowAmount > 1e40) return;
         if (_price > 1e40) return;
         if (_price < 1e5) return;
@@ -67,8 +67,8 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint maxLoanToValue, uint borrowRate, uint liquidationPenalty, uint _newPrice, uint _repayAmount) public {
-        init(maxLoanToValue, borrowRate, liquidationPenalty);
+    function testLiquidateAlwaysProfitableForLiquidator(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _newPrice, uint _repayAmount) public {
+        init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
         if (_newPrice > 1e60) return;
         if (_newPrice > 1e5) return;
         if (_repayAmount > 1e60) return;
