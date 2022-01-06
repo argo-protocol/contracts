@@ -42,6 +42,7 @@ contract ZeroInterestMarketTest is DSTest {
     function testBorrowMaintainsLTV(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _price, uint _borrowAmount) public {
        init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
         if (_borrowRate > 1e10) return;
+        if (_liquidationPenalty > 1e10) return;
         if (_borrowAmount > 1e40) return;
         if (_price > 1e40) return;
         if (_price < 1e5) return;
@@ -70,6 +71,7 @@ contract ZeroInterestMarketTest is DSTest {
     function testLiquidateAlwaysProfitableForLiquidator(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _newPrice, uint _repayAmount) public {
         init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
         if (_borrowRate > 1e10) return;
+        if (_liquidationPenalty > 1e10) return;
         if (_newPrice > 1e60) return;
         if (_newPrice < 1e5) return;
         if (_repayAmount > 1e60) return;
