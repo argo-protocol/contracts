@@ -17,6 +17,6 @@ contract TestAccount {
 
     function liquidate(address _user, uint _amount) external {
         debtToken.approve(address(market), _amount);
-        market.liquidate(_user, _amount);
+        market.liquidate(_user, _amount, address(this));
     }
 }
