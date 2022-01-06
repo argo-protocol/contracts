@@ -39,13 +39,14 @@ contract ZeroInterestMarketTest is DSTest {
     //// FUZZ TESTS
     /////////
 
-    function testBorrowMaintainsLTV(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _price, uint _borrowAmount) public {
-       init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
+    function testBorrowMaintainsLTV(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _price, uint _borrowAmount) public {       
+        if (_maxLoanToValue > 1e10) return;
         if (_borrowRate > 1e10) return;
         if (_liquidationPenalty > 1e10) return;
         if (_borrowAmount > 1e40) return;
         if (_price > 1e40) return;
         if (_price < 1e5) return;
+        init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
 
         uint debtAmount = _borrowAmount + (_borrowAmount * market.borrowRate() / market.BORROW_RATE_PRECISION());
         debtToken.mint(address(market), debtAmount);
@@ -68,14 +69,16 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _newPrice, uint _repayAmount) public {
-        init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
+    function testLiquidateAlwaysProfitableForLiquidator(uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty, uint _newPrice, uint _repayAmount) public {        
+        if (_maxLoanToValue > 1e10) return;
         if (_borrowRate > 1e10) return;
-        if (_liquidationPenalty > 1e10) return;
+        if (_liquidationPenalty > 1e10) return;        
         if (_newPrice > 1e60) return;
         if (_newPrice < 1e5) return;
         if (_repayAmount > 1e60) return;
         if (_repayAmount < 1e5) return;
+
+        init(_maxLoanToValue, _borrowRate, _liquidationPenalty);
 
         uint initialPrice = 100000e18; // $100,000
         uint borrowAmount = 45000e18;
