@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {IERC20, IOracle, ZeroInterestMarket, ZeroInterestMarket__factory} from "../typechain";
+import {IERC20, IOracle, IDebtToken, ZeroInterestMarket, ZeroInterestMarket__factory} from "../typechain";
 import { ethers } from "hardhat";
 import chai, { expect } from "chai";
 import { FakeContract, smock } from "@defi-wonderland/smock";
@@ -14,7 +14,7 @@ describe("ZeroInterestMarket", () => {
     let treasury: SignerWithAddress;
     let liquidator: SignerWithAddress;
     let other: SignerWithAddress;
-    let debtToken: FakeContract<IERC20>;
+    let debtToken: FakeContract<IDebtToken>;
     let collateralToken: FakeContract<IERC20>;
     let oracle: FakeContract<IOracle>;
     let market: ZeroInterestMarket;
@@ -22,7 +22,7 @@ describe("ZeroInterestMarket", () => {
     context("post-construction", () => {
         beforeEach(async () => {
             [owner, treasury, borrower, liquidator, other] = await ethers.getSigners();
-            debtToken = await smock.fake<IERC20>("IERC20");
+            debtToken = await smock.fake<IDebtToken>("IDebtToken");
             collateralToken = await smock.fake<IERC20>("IERC20");
             oracle = await smock.fake<IOracle>("IOracle");
             market = await new ZeroInterestMarket__factory(owner).deploy(
@@ -482,6 +482,43 @@ describe("ZeroInterestMarket", () => {
 
                 expect(await market.feesCollected()).to.equal(0);
                 expect(debtToken.transfer).to.be.calledWith(treasury.address, `3${E18}`);
+            });
+        });
+
+        describe("reduceSupply", () => {
+            it("transfers the debt tokens to the owner", async () => {
+                debtToken.transfer.returns(true);
+                await market.connect(owner).reduceSupply(`1000${E18}`);
+
+                expect(debtToken.transfer).to.be.calledWith(owner.address, `1000${E18}`);
+            });
+
+            it("can only be called by the owner", async () => {
+                await expect(market.connect(other).reduceSupply(`1000${E18}`)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            });
+        });
+
+        describe("setTreasury", () => {
+            it("can change the treasury address", async () => {
+                expect(await market.treasury()).to.equal(treasury.address);
+                await market.connect(owner).setTreasury(other.address);
+                expect(await market.treasury()).to.equal(other.address);
+            });
+
+            it("emits an event", async () => {
+                await expect(market.connect(owner).setTreasury(other.address)).
+                    to.emit(market, "TreasuryUpdated").withArgs(other.address);
+            });
+
+            it("can only be done by the owner", async () => {
+                await expect(market.connect(other).setTreasury(other.address)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("cannot be set to a zero address", async () => {
+                await expect(market.connect(owner).setTreasury(ethers.constants.AddressZero)).
+                    to.be.revertedWith("Market: 0x0 treasury address");
             });
         });
     });
