@@ -2,15 +2,15 @@
 pragma solidity ^0.8.0;
 
 interface IMarket {
-    function deposit(uint _amount) external;
-    function withdraw(uint _amount) external;
-    function borrow(uint _amount) external;
-    function repay(uint _amount) external;
+    function deposit(address _to, uint _amount) external;
+    function withdraw(address _to, uint _amount) external;
+    function borrow(address _to, uint _amount) external;
+    function repay(address _to, uint _amount) external;
 
     function depositAndBorrow(uint _collateralAmount, uint _debtAmount) external;
     function repayAndWithdraw(uint _debtAmount, uint _collateralAmount) external;
 
-    function liquidate(address _user, uint _amount) external;
+    function liquidate(address _user, uint _amount, address _to) external;
     function updatePrice() external returns (uint);
 
     function getUserLTV(address _user) external view returns(uint);
