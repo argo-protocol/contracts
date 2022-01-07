@@ -155,35 +155,38 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _to the address that will receive the liquidated collateral
      */
     function liquidate(address _user, uint _maxAmount, address _to) external override {
+        require(msg.sender != _user, "Market: cannot liquidate self");
+
         uint price = _updatePrice();
 
         require(!isUserSolvent(_user), "Market: user solvent");
 
-        uint userCollValue = userCollateral[_user] * price /  LAST_PRICE_PRECISION;
-        uint userDebtAmount = userDebt[_user];
-        uint repayAmount;
-        if (userCollValue < userDebtAmount) {
-            // there isn't enough collateral to repay all the debt
-            // TODO: determine if this is really the right thing to do
-            uint beforeFeeAmount = userCollValue * LIQUIDATION_PENALTY_PRECISION / (LIQUIDATION_PENALTY_PRECISION + liquidationPenalty);
-            repayAmount = _maxAmount > beforeFeeAmount ? beforeFeeAmount : _maxAmount;
+        uint userCollValue = (userCollateral[_user] * price) /  LAST_PRICE_PRECISION;
+        uint discountedCollateralValue = (userCollValue * (LIQUIDATION_PENALTY_PRECISION - liquidationPenalty)) / LIQUIDATION_PENALTY_PRECISION;
+        uint repayAmount = userDebt[_user] < _maxAmount ? userDebt[_user] : _maxAmount;
+        uint liquidatedCollateral;
+
+        if (discountedCollateralValue < repayAmount) {
+            // collateral is worth less than the proposed repayment amount
+            // so buy it all
+            liquidatedCollateral = userCollateral[_user];
+            repayAmount = discountedCollateralValue;
         } else {
-            // all debt can be repaid
-            repayAmount = userDebtAmount > _maxAmount ? _maxAmount : userDebtAmount;
+            // collateral is worth more than debt, liquidator purchases "repayAmount"
+            liquidatedCollateral = (repayAmount * LAST_PRICE_PRECISION) / discountedCollateralValue;
         }
 
-        uint userCollLiq = repayAmount * LAST_PRICE_PRECISION / price;
-        uint userLiqPenalty = userCollLiq * liquidationPenalty / LIQUIDATION_PENALTY_PRECISION;
-        uint liquidatedCollateral = userCollLiq + userLiqPenalty;
-
+        // bookkeeping
         userCollateral[_user] = userCollateral[_user] - liquidatedCollateral;
         totalCollateral = totalCollateral - liquidatedCollateral;
         userDebt[_user] = userDebt[_user] - repayAmount;
         totalDebt = totalDebt - repayAmount;
 
-        debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
+        emit Repay(msg.sender, _user, repayAmount);
+        emit Withdraw(_user, _to, liquidatedCollateral);
+        emit Liquidate(_user, _to, repayAmount, liquidatedCollateral, price);
 
-        emit Liquidate(msg.sender, _to, repayAmount, liquidatedCollateral, price);
+        debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
         collateralToken.safeTransfer(_to, liquidatedCollateral);
     }
 
