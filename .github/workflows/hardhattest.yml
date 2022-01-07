@@ -41,6 +41,8 @@ jobs:
         run: npx hardhat test
 
       - name: Coverage 🙈
+        env:
+          ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
         run: npx hardhat coverage
 
       # - name: Deploy 🚀
