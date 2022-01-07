@@ -34,14 +34,15 @@ describe("ZeroInterestMarket", () => {
             collateralToken = await smock.fake<IERC20>("IERC20");
             oracle = await smock.fake<IOracle>("IOracle");
             swapper = await smock.fake<IFlashSwap>("IFlashSwap");
-            market = await new ZeroInterestMarket__factory(owner).deploy(
-                treasury.address,
-                collateralToken.address,
-                debtToken.address,
-                oracle.address,
-                60000, // loan-to-value (60%)
-                1500, // borrow rate (1.5%) 
-                10000, // liquidation penalty (10%)
+            market = await new ZeroInterestMarket__factory(owner).deploy();
+            await market.initialize(
+              treasury.address,
+              collateralToken.address,
+              debtToken.address,
+              oracle.address,
+              60000, // loan-to-value (60%)
+              1500, // borrow rate (1.5%)
+              10000 // liquidation penalty (10%)
             );
         });
 
@@ -377,7 +378,8 @@ describe("ZeroInterestMarket", () => {
                 await market.connect(borrower).borrow(borrower.address, `500${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
 
-                oracle.fetchPrice.returns([true, `80${E18}`]);
+                const PRICE = `80${E18}`;
+                oracle.fetchPrice.returns([true, PRICE]);
                 await market.updatePrice();
                 
                 // LTV at 63%, ruh roh
@@ -388,7 +390,7 @@ describe("ZeroInterestMarket", () => {
                 const collateralLiquidated = `704861111111111111`;
 
                 await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, swapper.address)).
-                    to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated).
+                    to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
                
