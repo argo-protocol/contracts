@@ -82,7 +82,7 @@ describe("ZeroInterestMarket", () => {
                 const COLL_VALUE = `100${E18}`;
 
                 collateralToken.transferFrom.returns(true);
-                oracle.fetchPrice.returns(COLL_VALUE);
+                oracle.fetchPrice.returns([true, COLL_VALUE]);
 
                 await expect(market.connect(borrower).deposit(borrower.address, COLL_AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, COLL_AMOUNT);
@@ -170,7 +170,7 @@ describe("ZeroInterestMarket", () => {
                 collateralToken.transfer.returns(true);
                 debtToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                oracle.fetchPrice.returns(COLL_VALUE);
+                oracle.fetchPrice.returns([true, COLL_VALUE]);
 
                 await expect(market.connect(borrower).deposit(borrower.address, COLL_AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, COLL_AMOUNT);
@@ -239,7 +239,7 @@ describe("ZeroInterestMarket", () => {
                 collateralToken.transferFrom.returns(true);
                 debtToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                oracle.fetchPrice.returns(COLL_VALUE);
+                oracle.fetchPrice.returns([true, COLL_VALUE]);
 
                 await market.connect(borrower).deposit(borrower.address, COLL_AMOUNT);
                 await market.connect(borrower).borrow(borrower.address, BORROW_AMOUNT);
@@ -296,7 +296,7 @@ describe("ZeroInterestMarket", () => {
             it("is a convenience wrapper for the two functions", async () => {
                 collateralToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                oracle.fetchPrice.returns(`100${E18}`);
+                oracle.fetchPrice.returns([true, `100${E18}`]);
                 await market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`);
 
                 expect(await market.userCollateral(borrower.address)).to.equal(`10${E18}`);
@@ -310,7 +310,7 @@ describe("ZeroInterestMarket", () => {
                 collateralToken.transfer.returns(true);
                 debtToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                oracle.fetchPrice.returns(`100${E18}`);
+                oracle.fetchPrice.returns([true, `100${E18}`]);
                 await expect(market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address,`10${E18}`).
                     and.emit(market, "Borrow").withArgs(borrower.address, borrower.address,`300${E18}`);
@@ -333,7 +333,7 @@ describe("ZeroInterestMarket", () => {
                 collateralToken.transfer.returns(true);
                 debtToken.transfer.returns(true);
                 debtToken.transferFrom.returns(true);
-                oracle.fetchPrice.returns(COLL_VALUE);
+                oracle.fetchPrice.returns([true, COLL_VALUE]);
 
                 await market.connect(borrower).deposit(borrower.address, COLL_AMOUNT);
             });
@@ -343,7 +343,7 @@ describe("ZeroInterestMarket", () => {
                 await market.connect(borrower).borrow(borrower.address, `500${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
 
-                oracle.fetchPrice.returns(`80${E18}`);
+                oracle.fetchPrice.returns([true, `80${E18}`]);
                 await market.updatePrice();
                 
                 // LTV at 63%, ruh roh
@@ -366,7 +366,7 @@ describe("ZeroInterestMarket", () => {
                 await market.connect(borrower).borrow(borrower.address, `500${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
 
-                oracle.fetchPrice.returns(`80${E18}`);
+                oracle.fetchPrice.returns([true, `80${E18}`]);
                 await market.updatePrice();
                 
                 // LTV at 63%, ruh roh
@@ -403,7 +403,7 @@ describe("ZeroInterestMarket", () => {
                 expect(await market.getUserLTV(borrower.address)).to.equal("50750");
 
                 // price falls from $100 to $1
-                oracle.fetchPrice.returns(`1${E18}`);
+                oracle.fetchPrice.returns([true, `1${E18}`]);
                 await market.updatePrice();
                 
                 // LTV at 5075%, rekt
@@ -430,7 +430,7 @@ describe("ZeroInterestMarket", () => {
                 expect(await market.getUserLTV(borrower.address)).to.equal("50750");
 
                 // price falls from $100 to $1
-                oracle.fetchPrice.returns(`1${E18}`);
+                oracle.fetchPrice.returns([true, `1${E18}`]);
                 await market.updatePrice();
                 
                 // LTV at 5075%, rekt
@@ -453,7 +453,7 @@ describe("ZeroInterestMarket", () => {
                 await market.connect(borrower).borrow(borrower.address, `500${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
 
-                oracle.fetchPrice.returns(`80${E18}`);
+                oracle.fetchPrice.returns([true, `80${E18}`]);
                 await market.updatePrice();
                 
                 // LTV at 63%, ruh roh
@@ -473,7 +473,7 @@ describe("ZeroInterestMarket", () => {
             it("transfers fees to the treasury", async () => {
                 collateralToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                oracle.fetchPrice.returns(`100${E18}`);
+                oracle.fetchPrice.returns([true, `100${E18}`]);
                 await market.connect(borrower).depositAndBorrow(`10${E18}`, `200${E18}`);
                 
                 expect(await market.feesCollected()).to.equal(`3${E18}`);
