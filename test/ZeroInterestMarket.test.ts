@@ -340,10 +340,11 @@ describe("ZeroInterestMarket", () => {
 
             it("will claim collateral from underwater users", async () => {
                 const DEBT_AMOUNT = "507500000000000000000"; // $507.50
+                const PRICE = `80${E18}`;
                 await market.connect(borrower).borrow(borrower.address, `500${E18}`);
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
 
-                oracle.fetchPrice.returns([true, `80${E18}`]);
+                oracle.fetchPrice.returns([true, PRICE]);
                 await market.updatePrice();
                 
                 // LTV at 63%, ruh roh
@@ -355,7 +356,7 @@ describe("ZeroInterestMarket", () => {
                 const collateralLiquidated = `6978125000000000000`;
 
                 await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address)).
-                    to.emit(market, "Liquidate").withArgs(liquidator.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated);
+                    to.emit(market, "Liquidate").withArgs(liquidator.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, PRICE);
                
                 expect(collateralToken.transfer).to.be.calledWith(liquidator.address, collateralLiquidated);
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, DEBT_AMOUNT);

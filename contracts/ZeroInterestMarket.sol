@@ -22,7 +22,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
     event Withdraw(address indexed from, address indexed to, uint256 amount);
     event Borrow(address indexed from, address indexed to, uint256 amount);
     event Repay(address indexed from, address indexed to, uint256 amount);
-    event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral);
+    event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
     event TreasuryUpdated(address newTreasury);
 
     uint constant internal MAX_INT = 2**256 - 1;
@@ -183,7 +183,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
 
         debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
 
-        emit Liquidate(msg.sender, _to, repayAmount, liquidatedCollateral);
+        emit Liquidate(msg.sender, _to, repayAmount, liquidatedCollateral, price);
         collateralToken.safeTransfer(_to, liquidatedCollateral);
     }
 
