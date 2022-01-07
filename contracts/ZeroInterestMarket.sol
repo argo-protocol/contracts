@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import { IOracle } from "./interfaces/IOracle.sol";
 import { IMarket } from "./interfaces/IMarket.sol";
 import { IDebtToken } from "./interfaces/IDebtToken.sol";
+import { IFlashSwap } from "./interfaces/IFlashSwap.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
@@ -153,8 +154,9 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _user the account to liquidate
      * @param _maxAmount the maximum amount of debt the liquidator is willing to repay
      * @param _to the address that will receive the liquidated collateral
+     * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
-    function liquidate(address _user, uint _maxAmount, address _to) external override {
+    function liquidate(address _user, uint _maxAmount, address _to, IFlashSwap _swapper) external override {
         require(msg.sender != _user, "Market: cannot liquidate self");
 
         uint price = _updatePrice();
@@ -186,8 +188,11 @@ contract ZeroInterestMarket is Ownable, IMarket {
         emit Withdraw(_user, _to, liquidatedCollateral);
         emit Liquidate(_user, _to, repayAmount, liquidatedCollateral, price);
 
-        debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
         collateralToken.safeTransfer(_to, liquidatedCollateral);
+        if (_swapper != IFlashSwap(address(0))) {
+            _swapper.swap(collateralToken, debtToken, msg.sender, repayAmount, liquidatedCollateral);
+        }
+        debtToken.safeTransferFrom(msg.sender, address(this), repayAmount);
     }
 
     /**

@@ -1,5 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import {IERC20, IOracle, IDebtToken, ZeroInterestMarket, ZeroInterestMarket__factory} from "../typechain";
+import {
+    IDebtToken,
+    IERC20,
+    IOracle,
+    IFlashSwap,
+    ZeroInterestMarket,
+    ZeroInterestMarket__factory
+} from "../typechain";
 import { ethers } from "hardhat";
 import chai, { expect } from "chai";
 import { FakeContract, smock } from "@defi-wonderland/smock";
@@ -18,6 +25,7 @@ describe("ZeroInterestMarket", () => {
     let collateralToken: FakeContract<IERC20>;
     let oracle: FakeContract<IOracle>;
     let market: ZeroInterestMarket;
+    let swapper: FakeContract<IFlashSwap>;
 
     context("post-construction", () => {
         beforeEach(async () => {
@@ -25,6 +33,7 @@ describe("ZeroInterestMarket", () => {
             debtToken = await smock.fake<IDebtToken>("IDebtToken");
             collateralToken = await smock.fake<IERC20>("IERC20");
             oracle = await smock.fake<IOracle>("IOracle");
+            swapper = await smock.fake<IFlashSwap>("IFlashSwap");
             market = await new ZeroInterestMarket__factory(owner).deploy(
                 treasury.address,
                 collateralToken.address,
@@ -354,11 +363,36 @@ describe("ZeroInterestMarket", () => {
                 // $507.50 worth of collateral at $72 is 7.0486
                 const collateralLiquidated = `704861111111111111`;
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address)).
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero)).
                     to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
                
+                expect(collateralToken.transfer).to.be.calledWith(liquidator.address, collateralLiquidated);
+                expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, DEBT_AMOUNT);
+            });
+
+            it("can us a swapper to obtain debt tokens from collateral on open market", async () => {
+                const DEBT_AMOUNT = "507500000000000000000"; // $507.50
+                await market.connect(borrower).borrow(borrower.address, `500${E18}`);
+                expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
+
+                oracle.fetchPrice.returns([true, `80${E18}`]);
+                await market.updatePrice();
+                
+                // LTV at 63%, ruh roh
+                expect(await market.getUserLTV(borrower.address)).to.equal("63437");
+
+                // liquidation penalty 10%, so price collateral at $72
+                // $507.50 worth of collateral at $72 is 7.0486
+                const collateralLiquidated = `704861111111111111`;
+
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, swapper.address)).
+                    to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated).
+                    and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
+                    and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
+               
+                expect(swapper.swap).to.be.calledWith(collateralToken.address, debtToken.address, liquidator.address, ethers.BigNumber.from(DEBT_AMOUNT), ethers.BigNumber.from(collateralLiquidated));
                 expect(collateralToken.transfer).to.be.calledWith(liquidator.address, collateralLiquidated);
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, DEBT_AMOUNT);
             });
@@ -376,7 +410,7 @@ describe("ZeroInterestMarket", () => {
 
                 // liquidate $100 of debt
                 const REPAY_AMOUNT = `100${E18}`;
-                await market.connect(liquidator).liquidate(borrower.address, REPAY_AMOUNT, liquidator.address);
+                await market.connect(liquidator).liquidate(borrower.address, REPAY_AMOUNT, liquidator.address, ethers.constants.AddressZero);
 
                 // liquidation penalty 10%, so price collateral at $72
                 // $100 worth of an $72 token is 1.38888
@@ -392,7 +426,7 @@ describe("ZeroInterestMarket", () => {
                 // LTV at 50.75%, all good
                 expect(await market.getUserLTV(borrower.address)).to.equal("50750");
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address))
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero))
                     .to.be.revertedWith("Market: user solvent");
             });
 
@@ -412,7 +446,7 @@ describe("ZeroInterestMarket", () => {
                 expect(await market.getUserLTV(borrower.address)).to.equal("5075000");
 
                 // at this point, this user owes $507.50, but only has $10 worth of collateral
-                await market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address);
+                await market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero);
 
                 // 10% liquidation penallty, so buy the collateral at $0.90
                 // 10 tokens of collateral @ $0.90 is $9
@@ -440,7 +474,7 @@ describe("ZeroInterestMarket", () => {
 
                 // at this point, this user owes $507.50, but only has $10 worth of collateral
                 // liquidator buys $5 of it
-                await market.connect(liquidator).liquidate(borrower.address, `5${E18}`, liquidator.address);
+                await market.connect(liquidator).liquidate(borrower.address, `5${E18}`, liquidator.address, ethers.constants.AddressZero);
 
                 // 10% liquidation penallty, so buy the collateral at $0.90
                 // $5 with of $0.90 tokens is 5.555555
@@ -449,7 +483,7 @@ describe("ZeroInterestMarket", () => {
             });
 
             it("cannot liquidate themself", async () => {
-                await expect(market.connect(liquidator).liquidate(liquidator.address, 1, liquidator.address)).
+                await expect(market.connect(liquidator).liquidate(liquidator.address, 1, liquidator.address, ethers.constants.AddressZero)).
                     to.be.revertedWith("Market: cannot liquidate self");
             });
 
@@ -469,7 +503,7 @@ describe("ZeroInterestMarket", () => {
                 // $507.50 worth of collateral at $72 is 7.0486
                 const collateralLiquidated = `704861111111111111`;
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, other.address)).
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, other.address, ethers.constants.AddressZero)).
                     to.emit(market, "Liquidate").withArgs(borrower.address, other.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, other.address, collateralLiquidated);
