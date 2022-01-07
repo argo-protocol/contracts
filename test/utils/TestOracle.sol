@@ -10,7 +10,7 @@ contract TestOracle is IOracle {
         price = _price;
     }
 
-    function fetchPrice() external view override returns (uint) {
-        return price;
+    function fetchPrice() external view override returns (bool, uint) {
+        return (true, price);
     }
 }

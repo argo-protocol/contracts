@@ -206,8 +206,11 @@ contract ZeroInterestMarket is Ownable, IMarket {
     }
 
     function _updatePrice() internal returns (uint) {
-        lastPrice = oracle.fetchPrice();
-        // TODO: emit event
+        (bool success, uint256 price) = oracle.fetchPrice();
+        if (success) {
+            lastPrice = price;
+            // TODO: emit event
+        }
         return lastPrice;
     }
 
