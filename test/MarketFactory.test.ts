@@ -5,7 +5,7 @@ import  { expect } from "chai";
 
 const x0 = "0x".padEnd(42, "0");
 
-describe.only("MarketFactory", () => {
+describe("MarketFactory", () => {
     let deployer: SignerWithAddress;
     let owner: SignerWithAddress;
     let other: SignerWithAddress;
