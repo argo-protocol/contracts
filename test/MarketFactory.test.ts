@@ -33,6 +33,7 @@ describe.only("MarketFactory", () => {
                 await expect(marketFactory.connect(owner).createZeroInterestMarket(x0, x0, x0, x0, ltv, 2, 3))
                     .to.emit(marketFactory, "CreateMarket")
                     .withArgs(i);
+                expect(await marketFactory.numMarkets()).to.eq(i+1);
                 const marketAddr = await marketFactory.markets(i);
                 const market = await ethers.getContractAt("ZeroInterestMarket", marketAddr);
                 expect(await market.maxLoanToValue()).to.eq(ltv);
