@@ -7,7 +7,9 @@
     "coverage": "yarn typechain && hardhat coverage --solcoverjs ./.solcover.js --temp artifacts --testfiles \"./test/**/*.ts\"",
     "deploy": "hardhat deploy:Greeter",
     "lint": "solhint --config ./.solhint.json --max-warnings 0 \"contracts/**/*.sol\"",
-    "typechain": "hardhat typechain"
+    "typechain": "hardhat typechain",
+    "prettier:check": "prettier --check \"{contracts/**/*.sol,test/**/*.js,**/*.ts}\"",
+    "prettier": "prettier --write \"{contracts/**/*.sol,test/**/*.js,**/*.ts}\""
   },
   "devDependencies": {
     "@defi-wonderland/smock": "^2.0.7",
@@ -35,8 +37,8 @@
     "ethers": "^5.0.0",
     "hardhat": "^2.8.0",
     "hardhat-gas-reporter": "^1.0.4",
-    "prettier": "^2.3.2",
-    "prettier-plugin-solidity": "^1.0.0-beta.13",
+    "prettier": "^2.5.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.6",
     "solidity-coverage": "^0.7.16",
     "ts-node": "^10.1.0",
