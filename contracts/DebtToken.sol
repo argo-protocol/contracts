@@ -1,12 +1,36 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract DebtToken is ERC20, Ownable {
-    constructor() ERC20("SIN USD", "SIN") {
+/**
+ * @notice A collateralized debt position token. Protocol assumes this is worth $1.
+ */
+contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
+    bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
+    uint private maxFlashLoanAmount;
+    uint private flashFeeRate;
+    uint public feesCollected;
+    uint private constant FLASH_FEE_PRECISION = 1e5;
+    address private treasury;
 
+    event FlashFeeRateUpdated(uint newFlashFeeRate);
+    event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
+    event TreasuryUpdated(address newTreasury);
+    event FeesHarvested(uint fees);
+
+    constructor(address _treasury) ERC20("SIN USD", "SIN") {
+        require(_treasury != address(0), "DebtToken: 0x0 treasury address");
+        treasury = _treasury;
+        maxFlashLoanAmount = 0;
+        flashFeeRate = 0;
+
+        emit TreasuryUpdated(treasury);
+        emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
+        emit FlashFeeRateUpdated(flashFeeRate);
     }
 
     /**
@@ -25,5 +49,105 @@ contract DebtToken is ERC20, Ownable {
     function burn(uint _amount) external {
         _burn(msg.sender, _amount);
     }
-}
 
+    ///////////
+    ///// EIP-3156 flash loan implementation
+    ///////////
+
+    /**
+     * @dev Returns the maximum amount of tokens available for loan.
+     * @param _token The address of the token that is requested.
+     * @return The amont of token that can be loaned.
+     */
+    function maxFlashLoan(address _token) public view override returns (uint) {
+        return _token == address(this) ? maxFlashLoanAmount : 0;
+    }
+
+    /**
+     * @dev Returns the fee applied when doing flash loans. 
+     * @param _token The token to be flash loaned.
+     * @param _amount The amount of tokens to be loaned.
+     * @return The fees applied to the corresponding flash loan.
+     */
+    function flashFee(address _token, uint256 _amount) public view override returns (uint256) {
+        require(_token == address(this), "ERC20FlashMint: wrong token");
+        return (_amount * flashFeeRate) / FLASH_FEE_PRECISION;
+    }
+
+    /**
+     * @dev Performs a flash loan. New tokens are minted and sent to the
+     * `receiver`, who is required to implement the {IERC3156FlashBorrower}
+     * interface. By the end of the flash loan, the receiver is expected to own
+     * amount + fee tokens and have them approved back to the token contract itself so
+     * they can be burned.
+     * @param receiver The receiver of the flash loan. Should implement the
+     * {IERC3156FlashBorrower.onFlashLoan} interface.
+     * @param token The token to be flash loaned. Only `address(this)` is
+     * supported.
+     * @param amount The amount of tokens to be loaned.
+     * @param data An arbitrary datafield that is passed to the receiver.
+     * @return `true` is the flash loan was successful.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) public override returns (bool) {
+        require(amount <= maxFlashLoanAmount, "ERC20FlashMint: amount above max");
+        uint256 fee = flashFee(token, amount);
+        _mint(address(receiver), amount);
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
+            "ERC20FlashMint: invalid return value"
+        );
+        uint256 currentAllowance = allowance(address(receiver), address(this));
+        require(currentAllowance >= amount + fee, "ERC20FlashMint: allowance does not allow refund");
+        _approve(address(receiver), address(this), currentAllowance - amount - fee);
+        // save gas by burning the fee collected, will mint it again when harvesting
+        _burn(address(receiver), amount + fee);
+        feesCollected = feesCollected + fee;
+        return true;
+    }
+
+    /**
+     * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
+     * @param _flashFeeRate the new rate
+     */
+    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
+        require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
+        flashFeeRate = _flashFeeRate;
+        emit FlashFeeRateUpdated(flashFeeRate);
+    }
+
+    /**
+     * @notice sets the flash loan cap
+     * @param _maxFlashLoanAmount the new amount
+     */
+    function setMaxFlashLoanAmount(uint _maxFlashLoanAmount) external onlyOwner {
+        maxFlashLoanAmount = _maxFlashLoanAmount;
+        emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
+    }
+
+    /**
+     * @notice updates the treasury (where fees are sent)
+     * @param _treasury the new treasury
+     */
+    function setTreasury(address _treasury) external onlyOwner {
+        require(_treasury != address(0), "DebtToken: 0x0 treasury address");
+        treasury = _treasury;
+        emit TreasuryUpdated(treasury);
+    }
+
+    /**
+     * @notice harvests fees from flash loans to the treasury
+     */
+    function harvestFees() external {
+        uint fees = feesCollected;
+        feesCollected = 0;
+        emit FeesHarvested(fees);
+
+        // we burned the fee when we colleted it
+        _mint(treasury, fees);
+    }
+}
