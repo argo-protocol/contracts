@@ -12,8 +12,10 @@ interface IgOHM {
         @return amount of OHM
      */
     function balanceFrom(uint256 _amount) external view returns (uint256);
+
     function balanceTo(uint256 _amount) external view returns (uint256);
-    function index() external view returns (uint);
+
+    function index() external view returns (uint256);
 }
 
 /**
@@ -45,14 +47,14 @@ contract MainnetgOHMOracle is IOracle {
      * @notice fetches the latest price
      * @return the price with 18 decimals
      */
-    function fetchPrice() external view override returns (bool, uint) {
-        (bool ethUsdSuccess, uint ethUsdPrice) = ethUsdFeed.safeLatestRoundData();
-        (bool ohmEthSuccess, uint ohmEthPrice) = ohmEthFeed.safeLatestRoundData();
+    function fetchPrice() external view override returns (bool, uint256) {
+        (bool ethUsdSuccess, uint256 ethUsdPrice) = ethUsdFeed.safeLatestRoundData();
+        (bool ohmEthSuccess, uint256 ohmEthPrice) = ohmEthFeed.safeLatestRoundData();
 
         if (!ethUsdSuccess || !ohmEthSuccess) {
             return (false, 0);
         }
 
-         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / 1e9));
+        return (true, ((((ohmEthPrice * ethUsdPrice) / 1e18) * gOHM.index()) / 1e9));
     }
 }

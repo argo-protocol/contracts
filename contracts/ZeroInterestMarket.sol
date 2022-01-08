@@ -10,7 +10,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * A lending market that only supports a flat borrow fee and no interest rate
- * 
+ *
  * TODO: Create this using a factory
  */
 contract ZeroInterestMarket is Ownable, IMarket {
@@ -25,31 +25,39 @@ contract ZeroInterestMarket is Ownable, IMarket {
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral);
     event TreasuryUpdated(address newTreasury);
 
-    uint constant internal MAX_INT = 2**256 - 1;
+    uint256 internal constant MAX_INT = 2**256 - 1;
 
     address public treasury;
     IERC20 public collateralToken;
     IDebtToken public debtToken;
 
     IOracle public oracle;
-    uint public lastPrice;
-    uint constant public LAST_PRICE_PRECISION = 1e18;
+    uint256 public lastPrice;
+    uint256 public constant LAST_PRICE_PRECISION = 1e18;
 
-    uint public feesCollected;
+    uint256 public feesCollected;
 
-    uint public maxLoanToValue;
-    uint constant public LOAN_TO_VALUE_PRECISION = 1e5;
-    uint public borrowRate;
-    uint constant public BORROW_RATE_PRECISION = 1e5;
-    uint public liquidationPenalty;
-    uint constant public LIQUIDATION_PENALTY_PRECISION = 1e5;
+    uint256 public maxLoanToValue;
+    uint256 public constant LOAN_TO_VALUE_PRECISION = 1e5;
+    uint256 public borrowRate;
+    uint256 public constant BORROW_RATE_PRECISION = 1e5;
+    uint256 public liquidationPenalty;
+    uint256 public constant LIQUIDATION_PENALTY_PRECISION = 1e5;
 
-    mapping(address => uint) public userCollateral;
-    mapping(address => uint) public userDebt;
-    uint public totalCollateral;
-    uint public totalDebt;
+    mapping(address => uint256) public userCollateral;
+    mapping(address => uint256) public userDebt;
+    uint256 public totalCollateral;
+    uint256 public totalDebt;
 
-    constructor(address _treasury, address _collateralToken, address _debtToken, address _oracle, uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty) {
+    constructor(
+        address _treasury,
+        address _collateralToken,
+        address _debtToken,
+        address _oracle,
+        uint256 _maxLoanToValue,
+        uint256 _borrowRate,
+        uint256 _liquidationPenalty
+    ) {
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
         debtToken = IDebtToken(_debtToken);
@@ -64,13 +72,13 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _to the account that receives the collateral
      * @param _amount the amount of collateral tokens
      */
-    function deposit(address _to, uint _amount) public override {
+    function deposit(address _to, uint256 _amount) public override {
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
         collateralToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-         emit Deposit(msg.sender, _to, _amount);
+        emit Deposit(msg.sender, _to, _amount);
     }
 
     /**
@@ -78,7 +86,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _to the account that receives the collateral
      * @param _amount the amount of collateral tokens
      */
-    function withdraw(address _to, uint _amount) public override {
+    function withdraw(address _to, uint256 _amount) public override {
         require(_amount <= userCollateral[msg.sender], "Market: withdrawal exceeds collateral balance");
         _updatePrice();
 
@@ -97,10 +105,10 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _to the reciever of the debt tokens
      * @param _amount the amount of debt to incur
      */
-    function borrow(address _to, uint _amount) public override {
+    function borrow(address _to, uint256 _amount) public override {
         _updatePrice();
 
-        uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
+        uint256 borrowRateFee = (_amount * borrowRate) / BORROW_RATE_PRECISION;
         totalDebt = totalDebt + _amount + borrowRateFee;
         userDebt[msg.sender] = userDebt[msg.sender] + _amount + borrowRateFee;
 
@@ -116,14 +124,14 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _to the user's account to repay
      * @param _amount the amount of tokens to repay
      */
-    function repay(address _to, uint _amount) public override {
+    function repay(address _to, uint256 _amount) public override {
         require(_amount <= userDebt[_to], "Market: repay exceeds debt");
         totalDebt = totalDebt - _amount;
         userDebt[_to] = userDebt[_to] - _amount;
 
         debtToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-         emit Repay(msg.sender, _to, _amount);
+        emit Repay(msg.sender, _to, _amount);
     }
 
     /**
@@ -131,7 +139,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _depositAmount amount of collateral tokens to deposit
      * @param _borrowAmount amount of debt to incur
      */
-    function depositAndBorrow(uint _depositAmount, uint _borrowAmount) external override {
+    function depositAndBorrow(uint256 _depositAmount, uint256 _borrowAmount) external override {
         deposit(msg.sender, _depositAmount);
         borrow(msg.sender, _borrowAmount);
     }
@@ -141,7 +149,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _repayAmount amount of debt to repay
      * @param _withdrawAmount amount of collateral to withdraw
      */
-    function repayAndWithdraw(uint _repayAmount, uint _withdrawAmount) external override {
+    function repayAndWithdraw(uint256 _repayAmount, uint256 _withdrawAmount) external override {
         repay(msg.sender, _repayAmount);
         withdraw(msg.sender, _withdrawAmount);
     }
@@ -154,27 +162,32 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @param _maxAmount the maximum amount of debt the liquidator is willing to repay
      * @param _to the address that will receive the liquidated collateral
      */
-    function liquidate(address _user, uint _maxAmount, address _to) external override {
-        uint price = _updatePrice();
+    function liquidate(
+        address _user,
+        uint256 _maxAmount,
+        address _to
+    ) external override {
+        uint256 price = _updatePrice();
 
         require(!isUserSolvent(_user), "Market: user solvent");
 
-        uint userCollValue = userCollateral[_user] * price /  LAST_PRICE_PRECISION;
-        uint userDebtAmount = userDebt[_user];
-        uint repayAmount;
+        uint256 userCollValue = (userCollateral[_user] * price) / LAST_PRICE_PRECISION;
+        uint256 userDebtAmount = userDebt[_user];
+        uint256 repayAmount;
         if (userCollValue < userDebtAmount) {
             // there isn't enough collateral to repay all the debt
             // TODO: determine if this is really the right thing to do
-            uint beforeFeeAmount = userCollValue * LIQUIDATION_PENALTY_PRECISION / (LIQUIDATION_PENALTY_PRECISION + liquidationPenalty);
+            uint256 beforeFeeAmount = (userCollValue * LIQUIDATION_PENALTY_PRECISION) /
+                (LIQUIDATION_PENALTY_PRECISION + liquidationPenalty);
             repayAmount = _maxAmount > beforeFeeAmount ? beforeFeeAmount : _maxAmount;
         } else {
             // all debt can be repaid
             repayAmount = userDebtAmount > _maxAmount ? _maxAmount : userDebtAmount;
         }
 
-        uint userCollLiq = repayAmount * LAST_PRICE_PRECISION / price;
-        uint userLiqPenalty = userCollLiq * liquidationPenalty / LIQUIDATION_PENALTY_PRECISION;
-        uint liquidatedCollateral = userCollLiq + userLiqPenalty;
+        uint256 userCollLiq = (repayAmount * LAST_PRICE_PRECISION) / price;
+        uint256 userLiqPenalty = (userCollLiq * liquidationPenalty) / LIQUIDATION_PENALTY_PRECISION;
+        uint256 liquidatedCollateral = userCollLiq + userLiqPenalty;
 
         userCollateral[_user] = userCollateral[_user] - liquidatedCollateral;
         totalCollateral = totalCollateral - liquidatedCollateral;
@@ -191,7 +204,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @notice Harvests fees collected to the treasury
      */
     function harvestFees() external {
-        uint fees = feesCollected;
+        uint256 fees = feesCollected;
         feesCollected = 0;
 
         debtToken.safeTransfer(treasury, fees);
@@ -201,11 +214,11 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @notice updates the current price of the collateral and saves it in `lastPrice`.
      * @return the price
      */
-    function updatePrice() external override returns (uint) {
+    function updatePrice() external override returns (uint256) {
         return _updatePrice();
     }
 
-    function _updatePrice() internal returns (uint) {
+    function _updatePrice() internal returns (uint256) {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
@@ -218,7 +231,7 @@ contract ZeroInterestMarket is Ownable, IMarket {
      * @notice reduces the available supply to be borrowed by transferring debt tokens to owner.
      * @param _amount number of tokens to remove
      */
-    function reduceSupply(uint _amount) external onlyOwner {
+    function reduceSupply(uint256 _amount) external onlyOwner {
         debtToken.safeTransfer(this.owner(), _amount);
     }
 
@@ -235,11 +248,12 @@ contract ZeroInterestMarket is Ownable, IMarket {
     //////
     /// View Functions
     //////
-    function getUserLTV(address _user) public view override returns (uint) {
+    function getUserLTV(address _user) public view override returns (uint256) {
         if (userDebt[_user] == 0) return 0;
         if (userCollateral[_user] == 0) return MAX_INT;
         //  console.log("LTV", userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION));
-        return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
+        return
+            (userDebt[_user] * LOAN_TO_VALUE_PRECISION) / ((userCollateral[_user] * lastPrice) / LAST_PRICE_PRECISION);
     }
 
     function isUserSolvent(address _user) public view override returns (bool) {

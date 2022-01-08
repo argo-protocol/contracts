@@ -13,7 +13,7 @@ describe("DebtToken", () => {
 
     describe("constructor", () => {
         it("sets the constants", async () => {
-            const token = await (new DebtToken__factory(owner)).deploy();
+            const token = await new DebtToken__factory(owner).deploy();
 
             expect(await token.name()).to.equal("SIN USD");
             expect(await token.symbol()).to.equal("SIN");
@@ -25,7 +25,7 @@ describe("DebtToken", () => {
     describe("post-construction", () => {
         let token: DebtToken;
         beforeEach(async () => {
-            token = await (new DebtToken__factory(owner)).deploy();
+            token = await new DebtToken__factory(owner).deploy();
         });
 
         describe("mint", () => {
@@ -37,8 +37,9 @@ describe("DebtToken", () => {
             });
 
             it("can only be done by the owner", async () => {
-                await expect(token.connect(other).mint(other.address, 1234)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(token.connect(other).mint(other.address, 1234)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
 
@@ -59,8 +60,7 @@ describe("DebtToken", () => {
 
             it("reverts if burning more than balance", async () => {
                 await token.connect(owner).mint(other.address, 1234);
-                await expect(token.connect(other).burn(1235)).
-                    to.be.revertedWith("ERC20: burn amount exceeds balance");
+                await expect(token.connect(other).burn(1235)).to.be.revertedWith("ERC20: burn amount exceeds balance");
             });
         });
     });
