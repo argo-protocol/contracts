@@ -10,38 +10,36 @@ import "hardhat/console.sol";
  * Factory for Markets
  **/
 contract MarketFactory {
-  event CreateMarket(uint256 index);
+    event CreateMarket(uint256 index);
 
-  IMarket[] public markets;
-  ZeroInterestMarket private referenceImpl;
+    IMarket[] public markets;
+    ZeroInterestMarket private referenceImpl;
 
-  constructor() {
-    referenceImpl = new ZeroInterestMarket();
-  }
+    constructor() {
+        referenceImpl = new ZeroInterestMarket();
+    }
 
-  function createMarket(
-    address _treasury,
-    address _collateralToken,
-    address _debtToken,
-    address _oracle,
-    uint256 _maxLoanToValue,
-    uint256 _borrowRate,
-    uint256 _liquidationPenalty
-  ) public {
-    ZeroInterestMarket market = ZeroInterestMarket(
-      Clones.clone(address(referenceImpl))
-    );
-    market.initialize(
-      _treasury,
-      _collateralToken,
-      _debtToken,
-      _oracle,
-      _maxLoanToValue,
-      _borrowRate,
-      _liquidationPenalty
-    );
-    markets.push(market);
+    function createMarket(
+        address _treasury,
+        address _collateralToken,
+        address _debtToken,
+        address _oracle,
+        uint256 _maxLoanToValue,
+        uint256 _borrowRate,
+        uint256 _liquidationPenalty
+    ) public {
+        ZeroInterestMarket market = ZeroInterestMarket(Clones.clone(address(referenceImpl)));
+        market.initialize(
+            _treasury,
+            _collateralToken,
+            _debtToken,
+            _oracle,
+            _maxLoanToValue,
+            _borrowRate,
+            _liquidationPenalty
+        );
+        markets.push(market);
 
-    emit CreateMarket(markets.length - 1);
-  }
+        emit CreateMarket(markets.length - 1);
+    }
 }
