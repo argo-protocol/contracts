@@ -49,9 +49,10 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     uint public totalCollateral;
     uint public totalDebt;
  
-    constructor() initializer {}
+    constructor() {}
 
     function initialize(
+        address _owner,
         address _treasury,
         address _collateralToken,
         address _debtToken,
@@ -59,7 +60,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         uint256 _maxLoanToValue,
         uint256 _borrowRate,
         uint256 _liquidationPenalty
-    ) public {
+    ) public initializer {
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
         debtToken = IDebtToken(_debtToken);
@@ -67,6 +68,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         maxLoanToValue = _maxLoanToValue;
         borrowRate = _borrowRate;
         liquidationPenalty = _liquidationPenalty;
+        Ownable._transferOwnership(_owner);
     }
     /**
      * @notice Deposits `_amount` of collateral to the `_to` account.
