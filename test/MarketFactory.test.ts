@@ -39,7 +39,7 @@ describe.only("MarketFactory", () => {
                 expect(await market.maxLoanToValue()).to.eq(ltv);
             }
         });
-        it("transfers ownership to marketFactory owner", async () => {
+        it("sets ownership to marketFactory owner", async () => {
             marketFactory.connect(owner).createZeroInterestMarket(x0, x0, x0, x0, 1, 2, 3);
             const marketAddr = await marketFactory.markets(0);
             const market = await ethers.getContractAt("ZeroInterestMarket", marketAddr);
