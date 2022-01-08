@@ -23,7 +23,7 @@ contract ZeroInterestMarketTest is DSTest {
     function setUp() public {
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
-        debtToken = new DebtToken();
+        debtToken = new DebtToken(address(treasury));
         oracle = new TestOracle();
         market = new ZeroInterestMarket(
             address(treasury),
