@@ -4,19 +4,20 @@ pragma solidity ^0.8.0;
 import { IMarket } from "./interfaces/IMarket.sol";
 import { ZeroInterestMarket } from "./ZeroInterestMarket.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
-import "hardhat/console.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * Factory for Markets
  **/
-contract MarketFactory {
+contract MarketFactory is Ownable {
     event CreateMarket(uint256 index);
 
     IMarket[] public markets;
     ZeroInterestMarket private referenceImpl;
 
-    constructor() {
+    constructor(address _owner) {
         referenceImpl = new ZeroInterestMarket();
+        transferOwnership(_owner);
     }
 
     function createMarket(
@@ -27,7 +28,7 @@ contract MarketFactory {
         uint256 _maxLoanToValue,
         uint256 _borrowRate,
         uint256 _liquidationPenalty
-    ) public {
+    ) public onlyOwner {
         ZeroInterestMarket market = ZeroInterestMarket(Clones.clone(address(referenceImpl)));
         market.initialize(
             _treasury,
