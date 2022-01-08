@@ -36,7 +36,7 @@ describe("ZeroInterestMarket", () => {
             swapper = await smock.fake<IFlashSwap>("IFlashSwap");
             market = await new ZeroInterestMarket__factory(owner).deploy();
             await market.initialize(
-                owner.address,
+              owner.address,
               treasury.address,
               collateralToken.address,
               debtToken.address,
