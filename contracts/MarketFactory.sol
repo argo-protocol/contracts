@@ -62,4 +62,8 @@ contract MarketFactory is Ownable {
 
         emit CreateMarket(markets.length - 1);
     }
+
+    function numMarkets() public view returns (uint256) {
+        return markets.length;
+    }
 }
