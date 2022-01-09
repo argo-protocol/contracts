@@ -49,8 +49,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     uint public totalCollateral;
     uint public totalDebt;
  
-    constructor() {}
-
     function initialize(
         address _owner,
         address _treasury,
@@ -90,7 +88,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function withdraw(address _to, uint _amount) public override {
-        require(_amount <= userCollateral[msg.sender], "Market: withdrawal exceeds collateral balance");
+        require(_amount <= userCollateral[msg.sender], "Market: amount too large");
         _updatePrice();
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
