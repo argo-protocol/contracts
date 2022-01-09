@@ -11,15 +11,15 @@ import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 
 contract ZeroInterestMarketTest is DSTest {
-    TestAccount owner;
-    TestAccount treasury;
-    TestAccount liquidator;
-    ZeroInterestMarket market;
-    ERC20Mock collateralToken;
-    DebtToken debtToken;
-    TestOracle oracle;
-    uint MAX_LTV = 50000;
-    uint BORROW_FEE = 1500;
+    TestAccount public owner;
+    TestAccount public treasury;
+    TestAccount public liquidator;
+    ZeroInterestMarket public market;
+    ERC20Mock public collateralToken;
+    DebtToken public debtToken;
+    TestOracle public oracle;
+    uint public constant MAX_LTV = 50000;
+    uint public constant BORROW_FEE = 1500;
 
     function setUp() public {
         owner = new TestAccount("owner", address(0), address(0));
