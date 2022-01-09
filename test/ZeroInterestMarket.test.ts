@@ -388,7 +388,7 @@ describe("ZeroInterestMarket", () => {
                 const collateralLiquidated = `704861111111111111`;
 
                 await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, swapper.address)).
-                    to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated).
+                    to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, `80${E18}`).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
                
