@@ -261,7 +261,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
         if (userCollateral[_user] == 0) return MAX_INT;
-        //  console.log("LTV", userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION));
         return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
     }
 
