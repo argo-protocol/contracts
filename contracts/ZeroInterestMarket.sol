@@ -8,13 +8,12 @@ import { IFlashSwap } from "./interfaces/IFlashSwap.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
  * A lending market that only supports a flat borrow fee and no interest rate
- * 
- * TODO: Create this using a factory
  */
-contract ZeroInterestMarket is Ownable, IMarket {
+contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     using SafeERC20 for IERC20;
     using SafeERC20 for IDebtToken;
 
@@ -49,8 +48,19 @@ contract ZeroInterestMarket is Ownable, IMarket {
     mapping(address => uint) public userDebt;
     uint public totalCollateral;
     uint public totalDebt;
+ 
+    constructor() {}
 
-    constructor(address _treasury, address _collateralToken, address _debtToken, address _oracle, uint _maxLoanToValue, uint _borrowRate, uint _liquidationPenalty) {
+    function initialize(
+        address _owner,
+        address _treasury,
+        address _collateralToken,
+        address _debtToken,
+        address _oracle,
+        uint256 _maxLoanToValue,
+        uint256 _borrowRate,
+        uint256 _liquidationPenalty
+    ) public initializer {
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
         debtToken = IDebtToken(_debtToken);
@@ -58,8 +68,8 @@ contract ZeroInterestMarket is Ownable, IMarket {
         maxLoanToValue = _maxLoanToValue;
         borrowRate = _borrowRate;
         liquidationPenalty = _liquidationPenalty;
+        Ownable._transferOwnership(_owner);
     }
-
     /**
      * @notice Deposits `_amount` of collateral to the `_to` account.
      * @param _to the account that receives the collateral
