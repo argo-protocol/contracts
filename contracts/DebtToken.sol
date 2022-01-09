@@ -147,7 +147,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
         feesCollected = 0;
         emit FeesHarvested(fees);
 
-        // we burned the fee when we colleted it
+        // we burned the fee when we collected it
         _mint(treasury, fees);
     }
 }
