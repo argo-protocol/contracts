@@ -24,6 +24,9 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event Repay(address indexed from, address indexed to, uint256 amount);
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
     event TreasuryUpdated(address newTreasury);
+    event OracleUpdated(address oracle);
+    event LastPriceUpdated(uint price);
+    event FeesHarvested(uint fees);
 
     uint constant internal MAX_INT = 2**256 - 1;
 
@@ -73,6 +76,9 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         borrowRate = _borrowRate;
         liquidationPenalty = _liquidationPenalty;
         Ownable._transferOwnership(_owner);
+
+        emit TreasuryUpdated(_treasury);
+        emit OracleUpdated(_oracle);
     }
 
     /**
@@ -216,6 +222,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function harvestFees() external {
         uint fees = feesCollected;
         feesCollected = 0;
+        emit FeesHarvested(fees);
 
         debtToken.safeTransfer(treasury, fees);
     }
@@ -232,7 +239,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
-            // TODO: emit event
+            emit LastPriceUpdated(price);
         }
         return lastPrice;
     }
@@ -255,13 +262,34 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         emit TreasuryUpdated(_treasury);
     }
 
+    /**
+     * @notice updates the price oracle
+     * @param _oracle the new oracle
+     */
+    function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Market: 0x0 oracle address");
+        oracle = IOracle(_oracle);
+        emit OracleUpdated(_oracle);
+    }
+
+    /**
+     * @notice recover tokens inadvertantly sent to this contract by transfering them to the owner
+     * @param _token the address of the token
+     * @param _amount the amount to transfer
+     */
+    function recoverERC20(address _token, uint256 _amount) external onlyOwner {
+        require(_token != address(debtToken), "Cannot recover debt tokens");
+        require(_token != address(collateralToken), "Cannot recover collateral tokens");
+
+        IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
+
     //////
     /// View Functions
     //////
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
         if (userCollateral[_user] == 0) return MAX_INT;
-        //  console.log("LTV", userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION));
         return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
     }
 
