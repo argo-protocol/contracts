@@ -133,7 +133,7 @@ describe("DebtToken", () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(APPROVE_FEES);
                 await token.mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, `1000${E18}`, [])).
-                    to.be.revertedWith("ERC20FlashMint: allowance does not allow refund");
+                    to.be.revertedWith("allowance does not allow refund");
             });
 
             it("is capped", async () => {
@@ -142,7 +142,7 @@ describe("DebtToken", () => {
                 const BORROW_AMOUNT = `1000000000000000000000001`;
                 await token.mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, BORROW_AMOUNT, [])).
-                    to.be.revertedWith("ERC20FlashMint: amount above max");
+                    to.be.revertedWith("DebtToken: amount above max");
             });
         });
 

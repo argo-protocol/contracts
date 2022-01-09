@@ -59,6 +59,12 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         uint256 _borrowRate,
         uint256 _liquidationPenalty
     ) public initializer {
+        require(_owner != address(0), "0x owner address");
+        require(_treasury != address(0), "0x treasury address");
+        require(_collateralToken != address(0), "0x collateralToken address");
+        require(_debtToken != address(0), "0x debtToken address");
+        require(_oracle != address(0), "0x oracle address");
+
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
         debtToken = IDebtToken(_debtToken);
@@ -68,6 +74,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         liquidationPenalty = _liquidationPenalty;
         Ownable._transferOwnership(_owner);
     }
+
     /**
      * @notice Deposits `_amount` of collateral to the `_to` account.
      * @param _to the account that receives the collateral
