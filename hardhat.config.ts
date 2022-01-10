@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "hardhat-deploy";
 
 dotenv.config();
 
@@ -32,12 +33,31 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  namedAccounts: {
+    deployer: {
+        default: 0,
+        1: '', // TODO - mainnet deployer  
+        3: '', // TODO - ropsten deployer 
+    },
+    owner: {
+        default: 1,
+        1: '', // TODO - mainnet owner (e.g. multisig) 
+        3: '', // TODO - ropsten owner
+    }
+  },
+
   networks: {
+    mainnet: {
+      url: process.env.MAINNET_URL || "",
+      accounts:
+        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
