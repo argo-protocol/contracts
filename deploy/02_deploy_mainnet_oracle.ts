@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import {gOHM, OHM_ETH, ETH_USD } from "../oracleAddresses.json";
+import { gOHM, OHM_ETH, ETH_USD } from "../oracleAddresses.json";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deploy } = hre.deployments;
