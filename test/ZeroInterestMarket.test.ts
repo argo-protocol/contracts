@@ -219,7 +219,7 @@ describe("ZeroInterestMarket", () => {
 
             it("withdrawal exceeds collateral balance", async () => {
                 await expect(market.connect(borrower).withdraw(borrower.address, `11${E18}`))
-                    .to.be.revertedWith("Market: withdrawal exceeds collateral balance");
+                    .to.be.revertedWith("Market: amount too large");
             });  
 
             it("reverts if LTV is exceeded (bounds check)", async () => {
@@ -566,6 +566,53 @@ describe("ZeroInterestMarket", () => {
             it("cannot be set to a zero address", async () => {
                 await expect(market.connect(owner).setTreasury(ethers.constants.AddressZero)).
                     to.be.revertedWith("Market: 0x0 treasury address");
+            });
+        });
+
+        describe("setOracle", () => {
+            it("can change the oracle address", async () => {
+                expect(await market.oracle()).to.equal(oracle.address);
+                await market.connect(owner).setOracle(other.address);
+                expect(await market.oracle()).to.equal(other.address);
+            });
+
+            it("emits an event", async () => {
+                await expect(market.connect(owner).setOracle(other.address)).
+                    to.emit(market, "OracleUpdated").withArgs(other.address);
+            });
+
+            it("can only be done by the owner", async () => {
+                await expect(market.connect(other).setOracle(other.address)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("cannot be set to a zero address", async () => {
+                await expect(market.connect(owner).setOracle(ethers.constants.AddressZero)).
+                    to.be.revertedWith("Market: 0x0 oracle address");
+            });
+        });
+
+        describe("recoverERC20", () => {
+            it("transfer random ERC20 tokens to the owner", async () => {
+                let token = await smock.fake<IERC20>("IERC20");
+                token.transfer.returns(true);
+                await market.connect(owner).recoverERC20(token.address, 100);
+                expect(token.transfer).to.be.calledWith(owner.address, 100);
+            });
+
+            it("cannot recover debt token", async () => {
+                await expect(market.connect(owner).recoverERC20(debtToken.address, 100)).
+                    to.be.revertedWith("Cannot recover debt tokens");
+            });
+
+            it("cannot recover collateral token", async () => {
+                await expect(market.connect(owner).recoverERC20(collateralToken.address, 100)).
+                    to.be.revertedWith("Cannot recover collateral tokens");
+            });
+
+            it("can only be done by the owner", async () => {
+                await expect(market.connect(other).recoverERC20(collateralToken.address, 100)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
             });
         });
     });

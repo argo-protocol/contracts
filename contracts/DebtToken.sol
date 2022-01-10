@@ -94,15 +94,15 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
         uint256 amount,
         bytes calldata data
     ) public override returns (bool) {
-        require(amount <= maxFlashLoanAmount, "ERC20FlashMint: amount above max");
+        require(amount <= maxFlashLoanAmount, "DebtToken: amount above max");
         uint256 fee = flashFee(token, amount);
         _mint(address(receiver), amount);
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
-            "ERC20FlashMint: invalid return value"
+            "DebtToken: invalid return value"
         );
         uint256 currentAllowance = allowance(address(receiver), address(this));
-        require(currentAllowance >= amount + fee, "ERC20FlashMint: allowance does not allow refund");
+        require(currentAllowance >= amount + fee, "allowance does not allow refund");
         _approve(address(receiver), address(this), currentAllowance - amount - fee);
         // save gas by burning the fee collected, will mint it again when harvesting
         _burn(address(receiver), amount + fee);
@@ -147,7 +147,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
         feesCollected = 0;
         emit FeesHarvested(fees);
 
-        // we burned the fee when we colleted it
+        // we burned the fee when we collected it
         _mint(treasury, fees);
     }
 }

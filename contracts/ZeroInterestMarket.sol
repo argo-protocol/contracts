@@ -24,6 +24,9 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event Repay(address indexed from, address indexed to, uint256 amount);
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
     event TreasuryUpdated(address newTreasury);
+    event OracleUpdated(address oracle);
+    event LastPriceUpdated(uint price);
+    event FeesHarvested(uint fees);
 
     uint constant internal MAX_INT = 2**256 - 1;
 
@@ -49,8 +52,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     uint public totalCollateral;
     uint public totalDebt;
  
-    constructor() {}
-
     function initialize(
         address _owner,
         address _treasury,
@@ -61,6 +62,12 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         uint256 _borrowRate,
         uint256 _liquidationPenalty
     ) public initializer {
+        require(_owner != address(0), "0x owner address");
+        require(_treasury != address(0), "0x treasury address");
+        require(_collateralToken != address(0), "0x collateralToken address");
+        require(_debtToken != address(0), "0x debtToken address");
+        require(_oracle != address(0), "0x oracle address");
+
         treasury = _treasury;
         collateralToken = IERC20(_collateralToken);
         debtToken = IDebtToken(_debtToken);
@@ -69,7 +76,11 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         borrowRate = _borrowRate;
         liquidationPenalty = _liquidationPenalty;
         Ownable._transferOwnership(_owner);
+
+        emit TreasuryUpdated(_treasury);
+        emit OracleUpdated(_oracle);
     }
+
     /**
      * @notice Deposits `_amount` of collateral to the `_to` account.
      * @param _to the account that receives the collateral
@@ -90,7 +101,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function withdraw(address _to, uint _amount) public override {
-        require(_amount <= userCollateral[msg.sender], "Market: withdrawal exceeds collateral balance");
+        require(_amount <= userCollateral[msg.sender], "Market: amount too large");
         _updatePrice();
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
@@ -211,6 +222,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function harvestFees() external {
         uint fees = feesCollected;
         feesCollected = 0;
+        emit FeesHarvested(fees);
 
         debtToken.safeTransfer(treasury, fees);
     }
@@ -227,7 +239,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
-            // TODO: emit event
+            emit LastPriceUpdated(price);
         }
         return lastPrice;
     }
@@ -250,13 +262,34 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         emit TreasuryUpdated(_treasury);
     }
 
+    /**
+     * @notice updates the price oracle
+     * @param _oracle the new oracle
+     */
+    function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Market: 0x0 oracle address");
+        oracle = IOracle(_oracle);
+        emit OracleUpdated(_oracle);
+    }
+
+    /**
+     * @notice recover tokens inadvertantly sent to this contract by transfering them to the owner
+     * @param _token the address of the token
+     * @param _amount the amount to transfer
+     */
+    function recoverERC20(address _token, uint256 _amount) external onlyOwner {
+        require(_token != address(debtToken), "Cannot recover debt tokens");
+        require(_token != address(collateralToken), "Cannot recover collateral tokens");
+
+        IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
+
     //////
     /// View Functions
     //////
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
         if (userCollateral[_user] == 0) return MAX_INT;
-        //  console.log("LTV", userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION));
         return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
     }
 
