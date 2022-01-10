@@ -74,7 +74,7 @@ HARDHAT_NETWORK=localhost npx ts-node --files scripts/createMarket.ts --treasury
 ### Formatting
 
 ```
-yarn pretter
+yarn prettier
 ```
 
 ### Contact
