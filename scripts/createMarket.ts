@@ -1,10 +1,6 @@
 import hre from "hardhat";
 import yargs from "yargs/yargs";
 
-function parseAddress(a: string) {
-    return a.match(/^0x[a-fA-F0-9]{40}$/i);
-}
-
 async function main() {
     const argv = yargs(process.argv.slice(2))
         .options({
