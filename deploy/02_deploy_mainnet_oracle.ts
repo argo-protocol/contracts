@@ -1,17 +1,8 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import addresses from "../oracleParams.json";
-
-interface IOracleParams {
-    gOHM: string;
-    OHM_ETH: string;
-    ETH_USD: string;
-}
+import {gOHM, OHM_ETH, ETH_USD } from "../oracleAddresses.json";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    const networkName = hre.network.name;
-    const config = (addresses as { [key: string]: IOracleParams })[networkName];
-
     const { deploy } = hre.deployments;
     const { deployer } = await hre.getNamedAccounts();
 
@@ -22,7 +13,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     await deploy("MainnetgOHMOracle", {
         from: deployer,
-        args: [config.gOHM, config.OHM_ETH, config.ETH_USD],
+        args: [gOHM, OHM_ETH, ETH_USD],
         libraries: {
             SafeAggregatorV3: safeAggregatorV3.address,
         },

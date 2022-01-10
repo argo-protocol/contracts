@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "noImplicitAny": true,
   },
-  "include": ["./hardhat.config.ts", "./scripts", "./test", "./deploy", "./typechain"],
+  "include": ["./hardhat.config.ts", "./scripts", "./test", "./deploy", "./deployHelpers", "./typechain", "deployHelpers/helpers.ts"],
 }
