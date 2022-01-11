@@ -18,7 +18,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
 };
 
-func.dependencies = ["SafeAggregatorV3"];
 func.tags = ["Oracle"];
 func.skip = async (hre: HardhatRuntimeEnvironment) => hre.network.live;
 export default func;

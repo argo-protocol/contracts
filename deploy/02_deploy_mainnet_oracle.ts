@@ -12,6 +12,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         log: true,
     });
 };
-func.dependencies = ["SafeAggregatorV3"];
 func.tags = ["Oracle"];
 export default func;
