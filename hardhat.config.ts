@@ -42,9 +42,15 @@ const config: HardhatUserConfig = {
             url: process.env.ROPSTEN_URL || "",
             accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
         },
+        hardhat: {
+            live: false,
+            saveDeployments: true,
+            chainId: 1337,
+        },
         localhost: {
             live: false,
             saveDeployments: true,
+            chainId: 1337,
         },
     },
     gasReporter: {
