@@ -5,7 +5,7 @@ import "../lib/ds-test/src/test.sol";
 import { ZeroInterestMarket } from "../contracts/ZeroInterestMarket.sol";
 import { DebtToken } from "../contracts/DebtToken.sol";
 import { TestAccount } from "./utils/TestAccount.sol";
-import { TestOracle } from "./utils/TestOracle.sol";
+import { StubOracle } from "../contracts/stubs/StubOracle.sol";
 import { ERC20Mock } from "./utils/ERC20Mock.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
@@ -17,7 +17,7 @@ contract ZeroInterestMarketTest is DSTest {
     ZeroInterestMarket public market;
     ERC20Mock public collateralToken;
     DebtToken public debtToken;
-    TestOracle public oracle;
+    StubOracle public oracle;
     uint public constant MAX_LTV = 50000;
     uint public constant BORROW_FEE = 1500;
 
@@ -26,7 +26,7 @@ contract ZeroInterestMarketTest is DSTest {
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
         debtToken = new DebtToken(address(treasury));
-        oracle = new TestOracle();
+        oracle = new StubOracle();
         market = new ZeroInterestMarket();
         market.initialize(
             address(owner),

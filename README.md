@@ -1,10 +1,10 @@
-# Advanced Sample Hardhat Project
+# Argo Contracts
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+Argo is an OHM-focused decentralized borrowing protocol built around a synthetic stable unit of account.
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
+## Develop
 
-Try running some of the following tasks:
+This project uses [Hardhat](https://hardhat.org/) and is based on the [Advanced Sample Hardhat Project](https://github.com/nomiclabs/hardhat/tree/master/packages/hardhat-core/sample-projects/advanced-ts). Built-in commands include
 
 ```shell
 npx hardhat accounts
@@ -15,32 +15,68 @@ npx hardhat node
 npx hardhat help
 REPORT_GAS=true npx hardhat test
 npx hardhat coverage
-npx hardhat run scripts/deploy.ts
-TS_NODE_FILES=true npx ts-node scripts/deploy.ts
-npx eslint '**/*.{js,ts}'
-npx eslint '**/*.{js,ts}' --fix
-npx prettier '**/*.{json,sol,md}' --check
-npx prettier '**/*.{json,sol,md}' --write
-npx solhint 'contracts/**/*.sol'
-npx solhint 'contracts/**/*.sol' --fix
 ```
 
-# Etherscan verification
+## Test
 
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
+Basic Hardhat-basted testing:
 
-In this project, copy the .env.example file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
-
-```shell
-hardhat run --network ropsten scripts/sample-script.ts
+```
+yarn test
 ```
 
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
+Full testing requires installation of [dapp tools](https://dapp.tools/):
 
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
+```
+yarn fuzz
 ```
 
-# Performance optimizations
+## Deploy
 
-For faster runs of your tests and scripts, consider skipping ts-node's type checking by setting the environment variable `TS_NODE_TRANSPILE_ONLY` to `1` in hardhat's environment. For more details see [the documentation](https://hardhat.org/guides/typescript.html#performance-optimizations).
+This project uses [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) to manage and track deployments.
+
+To deploy locally:
+
+```
+npx hardhat deploy --network localhost
+```
+
+### Run locally
+
+When running a local node, deployments are automatic:
+
+```
+npx hardhat node --network localhost
+```
+
+To run without deployments:
+
+```
+npx hardhat node --no-deploy
+```
+
+
+## Creating a market
+
+To prepare a transaction for separate signing (e.g. via a Gnosis Safe or similar):
+
+```
+HARDHAT_NETWORK=localhost npx ts-node --files scripts/createMarket.ts --treasury 0x0ab87046fBb341D058F17CBC4c1133F25a20a52f \
+--collateralToken 0x0ab87046fBb341D058F17CBC4c1133F25a20a52f \
+--debtToken 0x0ab87046fBb341D058F17CBC4c1133F25a20a52f \
+--oracle 0x0ab87046fBb341D058F17CBC4c1133F25a20a52f \
+--maxLoanToValue 3 \
+--borrowRate 2 \
+--liquidationPenalty 1 \
+--prepare
+```
+
+### Formatting
+
+```
+yarn prettier
+```
+
+### Contact
+
+Discord link (TODO)
