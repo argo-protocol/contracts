@@ -11,8 +11,8 @@ import "hardhat-deploy";
 
 dotenv.config();
 
-const privateKey: string | undefined = process.env.PRIVATE_KEY ?? "NO_PRIVATE_KEY";
-const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_API_KEY";
+const privateKey: string | undefined = process.env.PRIVATE_KEY ?? "NO_PRIVATE_KEY_ABCDEFGHIJKLMNOPQ";
+const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_KEY_ABCDEFGHIJKLMNOPQ";
 
 const chainIds = {
     goerli: 5,
