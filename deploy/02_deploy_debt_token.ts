@@ -7,11 +7,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployer } = await hre.getNamedAccounts();
     const config = configs[hre.network.name];
 
-    await deploy("MarketFactory", {
+    const result = await deploy("DebtToken", {
         from: deployer,
-        args: [config.operatorMultisig],
+        args: [config.treasuryMultisig],
         log: true,
     });
+
+    const DebtToken = await hre.ethers.getContractFactory("DebtToken");
+    const debtToken = await DebtToken.attach(result.address);
+    if (await debtToken.owner() != config.operatorMultisig) {
+        await debtToken.transferOwnership(config.operatorMultisig);
+    }
 };
-func.tags = ["MarketFactory"];
+func.tags = ["DebtToken"];
 export default func;
