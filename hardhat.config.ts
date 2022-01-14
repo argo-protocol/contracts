@@ -8,10 +8,11 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
+import { ethers } from "hardhat";
 
 dotenv.config();
 
-const privateKey: string | undefined = process.env.PRIVATE_KEY ?? "NO_PRIVATE_KEY";
+const privateKey: string | undefined = process.env.PRIVATE_KEY ?? ethers.constants.AddressZero;
 const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_API_KEY";
 
 const chainIds = {
