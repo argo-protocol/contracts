@@ -11,7 +11,7 @@ import "hardhat-deploy";
 
 dotenv.config();
 
-const privateKey: string | undefined = process.env.PRIVATE_KEY ??  "0x0000000000000000000000000000000000000000";
+const privateKey: string | undefined = process.env.PRIVATE_KEY ??  "NO_PRIVATE_KEY";
 const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_API_KEY";
 
 const chainIds = {
@@ -26,7 +26,7 @@ const chainIds = {
 function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
     const url = `https://eth-${network}.alchemyapi.io/v2/${alchemyApiKey}`;
     return {
-        accounts: [`${privateKey}`],
+        accounts: privateKey !== "NO_PRIVATE_KEY" ? [`${privateKey}`] : [],
         chainId: chainIds[network],
         url,
     };
@@ -52,9 +52,9 @@ const config: HardhatUserConfig = {
     },
 
     networks: {
-        mainnet: getChainConfig("mainnet"),
-        ropsten: getChainConfig("ropsten"),
-        rinkeby: getChainConfig("rinkeby"),
+        // mainnet: getChainConfig("mainnet"),
+        // ropsten: getChainConfig("ropsten"),
+        // rinkeby: getChainConfig("rinkeby"),
         hardhat: {
             live: false,
             saveDeployments: true,
