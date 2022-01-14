@@ -35,6 +35,9 @@ jobs:
       - name: Compile 🛠
         run: yarn compile
 
+      - name: Lint 🔍
+        run: yarn lint
+
       - name: Test 🧪
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}

@@ -44,7 +44,9 @@ contract StubAggregator is AggregatorV3Interface {
         require(!noData, "No data present");
         roundId = _roundId;
         answer_ = answer;
+        // solhint-disable-next-line not-rely-on-time
         startedAt = block.timestamp;
+        // solhint-disable-next-line not-rely-on-time
         updatedAt = block.timestamp;
         answeredInRound = 0;
     }
@@ -63,7 +65,9 @@ contract StubAggregator is AggregatorV3Interface {
         require(!noData, "No data present");
         roundId = 0;
         answer_ = answer;
+        // solhint-disable-next-line not-rely-on-time
         startedAt = block.timestamp;
+        // solhint-disable-next-line not-rely-on-time
         updatedAt = block.timestamp;
         answeredInRound = 0;
     }
