@@ -55,7 +55,6 @@ To run without deployments:
 npx hardhat node --no-deploy
 ```
 
-
 ## Creating a market
 
 To prepare a transaction for separate signing (e.g. via a Gnosis Safe or similar):
@@ -69,6 +68,12 @@ HARDHAT_NETWORK=localhost npx ts-node --files scripts/createMarket.ts --treasury
 --borrowRate 2 \
 --liquidationPenalty 1 \
 --prepare
+```
+
+Listing markets:
+
+```
+npx hardhat markets --network rinkeby
 ```
 
 ### Formatting

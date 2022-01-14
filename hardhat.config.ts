@@ -1,5 +1,6 @@
 import * as dotenv from "dotenv";
 
+import { task } from "hardhat/config";
 import { HardhatUserConfig } from "hardhat/config";
 import { NetworkUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-etherscan";
@@ -8,6 +9,32 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
+import { BigNumber } from "ethers";
+
+task(
+  "markets",
+  "Print the markets created by the currently deployed MarketFactory",
+  async (args, hre) => {
+    const deployment = await hre.deployments.get("MarketFactory");
+    const marketFactory = await hre.ethers.getContractAt("MarketFactory", deployment.address);
+
+    const numMarkets = await marketFactory.numMarkets();
+    for (let i = BigNumber.from(0); i.lt(numMarkets); i = i.add(1)) {
+        const marketAddr = await marketFactory.markets(i);
+        const market = (await hre.ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddr);
+        console.log('')
+        console.log(`${marketAddr} - ${i.toString()}`)
+        console.log(`  lastPrice:          ${await market.lastPrice()}`);
+        console.log(`  feesCollected:      ${await market.feesCollected()}`);
+        console.log(`  maxLoanToValue:     ${await market.maxLoanToValue()}`);
+        console.log(`  borrowRate:         ${await market.borrowRate()}`);
+        console.log(`  liquidationPenalty: ${await market.liquidationPenalty()}`);
+        console.log(`  totalCollateral:    ${await market.totalCollateral()}`);
+        console.log(`  totalDebt:          ${await market.totalDebt()}`);
+    }
+});
+
+
 
 dotenv.config();
 
