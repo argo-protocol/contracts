@@ -1,0 +1,131 @@
+{
+  "address": "0x892F706C8943550177B3aD27DE9D4527aE9861Fa",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_gohm",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_ohmEthFeed",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_ethUsdFeed",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "fetchPrice",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xc5864bf79b50bec72589ddc891780c98a3cf931f2d7064f9acfabb6ca5c6714e",
+  "receipt": {
+    "to": null,
+    "from": "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
+    "contractAddress": "0x892F706C8943550177B3aD27DE9D4527aE9861Fa",
+    "transactionIndex": 6,
+    "gasUsed": "414316",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x5f17c617df12838a9e273e7d490bf9f905fd0a599341e75ff01e2c6f38080643",
+    "transactionHash": "0xc5864bf79b50bec72589ddc891780c98a3cf931f2d7064f9acfabb6ca5c6714e",
+    "logs": [],
+    "blockNumber": 9985634,
+    "cumulativeGasUsed": "1519161",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xB4Aaf6857411248A79B95bcb1C13E86140fE9C29",
+    "0xF2DEec3259EC9b359215B5bd35E2D4aa95E341a8",
+    "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "e4635647cd969a8d9c0c827048963a98",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_gohm\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_ohmEthFeed\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_ethUsdFeed\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"fetchPrice\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"fetchPrice()\":{\"returns\":{\"_0\":\"the price with 18 decimals\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"fetchPrice()\":{\"notice\":\"fetches the latest price\"}},\"notice\":\"price oracle for gOHM-USD on the ethereum mainnet\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/oracles/MainnetgOHMOracle.sol\":\"MainnetgOHMOracle\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":1},\"remappings\":[]},\"sources\":{\"contracts/interfaces/AggregatorV3Interface.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface AggregatorV3Interface {\\n  function decimals() external view returns (uint8);\\n\\n  function description() external view returns (string memory);\\n\\n  function version() external view returns (uint256);\\n\\n  // getRoundData and latestRoundData should both raise \\\"No data present\\\"\\n  // if they do not have data to report, instead of returning unset values\\n  // which could be misinterpreted as actual reported values.\\n  function getRoundData(uint80 _roundId)\\n    external\\n    view\\n    returns (\\n      uint80 roundId,\\n      int256 answer,\\n      uint256 startedAt,\\n      uint256 updatedAt,\\n      uint80 answeredInRound\\n    );\\n\\n  function latestRoundData()\\n    external\\n    view\\n    returns (\\n      uint80 roundId,\\n      int256 answer,\\n      uint256 startedAt,\\n      uint256 updatedAt,\\n      uint80 answeredInRound\\n    );\\n}\",\"keccak256\":\"0x6d04595d5f68f36186be58f14a5a20c6cafaf49ca329136af1e9f467a62bebe5\",\"license\":\"MIT\"},\"contracts/interfaces/IOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IOracle {\\n    function fetchPrice() external view returns (bool, uint);\\n}\",\"keccak256\":\"0xf3bc4b871ebb74641f91462364551170df871926ad43013db480e3857095c1a1\",\"license\":\"MIT\"},\"contracts/libraries/SafeAggregatorV3.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport { AggregatorV3Interface } from \\\"../interfaces/AggregatorV3Interface.sol\\\";\\n\\nlibrary SafeAggregatorV3 {\\n    uint private constant TARGET_DECIMALS = 18;\\n    /**\\n     * @notice returns  the latest price from a chainlink feed\\n     * @return boolean if call was successful\\n     * @return the price with 18 decimals\\n     */\\n    function safeLatestRoundData(AggregatorV3Interface self) internal view returns (bool, uint) {\\n        uint8 decimals;\\n\\n        try self.decimals() returns (uint8 decimals_) {\\n            decimals = decimals_;\\n        } catch {\\n            return (false, 0);\\n        }\\n\\n        try self.latestRoundData() returns\\n        (\\n            uint80 /* currentRoundId */,\\n            int256 currentPrice,\\n            uint256 /* startedAt */,\\n            uint256 /* timestamp */,\\n            uint80 /* answeredInRound */\\n        ) {\\n            uint price = uint(currentPrice);\\n            if (decimals < TARGET_DECIMALS) {\\n                price = price * (10**(TARGET_DECIMALS - decimals));\\n            } else if (decimals > TARGET_DECIMALS) {\\n                price = price / (10**(decimals - TARGET_DECIMALS));\\n            }\\n            return (true, price);\\n        } catch {\\n            return (false, 0);\\n        }\\n    }\\n}\",\"keccak256\":\"0x5d156630c6f242ba7e572854e3b89fde73337b130a689a79ebc226400dbac499\",\"license\":\"MIT\"},\"contracts/oracles/MainnetgOHMOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport { IOracle } from \\\"../interfaces/IOracle.sol\\\";\\nimport { AggregatorV3Interface } from \\\"../interfaces/AggregatorV3Interface.sol\\\";\\nimport { SafeAggregatorV3 } from \\\"../libraries/SafeAggregatorV3.sol\\\";\\n\\ninterface IgOHM {\\n    /**\\n        @notice converts OHM amount to gOHM\\n        @param _amount amount of gOHM\\n        @return amount of OHM\\n     */\\n    function balanceFrom(uint256 _amount) external view returns (uint256);\\n    function balanceTo(uint256 _amount) external view returns (uint256);\\n    function index() external view returns (uint);\\n}\\n\\n/**\\n * @notice price oracle for gOHM-USD on the ethereum mainnet\\n */\\ncontract MainnetgOHMOracle is IOracle {\\n    using SafeAggregatorV3 for AggregatorV3Interface;\\n\\n    uint256 private constant GOHM_PRECISION = 1e9;\\n    IgOHM private gOHM;\\n    AggregatorV3Interface private ohmEthFeed;\\n    AggregatorV3Interface private ethUsdFeed;\\n\\n    constructor(\\n        address _gohm,\\n        address _ohmEthFeed,\\n        address _ethUsdFeed\\n    ) {\\n        require(_gohm != address(0), \\\"Oracle: 0x0 gOHM address\\\");\\n        require(_ohmEthFeed != address(0), \\\"Oracle: 0x0 OHM-ETH address\\\");\\n        require(_ethUsdFeed != address(0), \\\"Oracle: 0x0 ETH-USD address\\\");\\n\\n        gOHM = IgOHM(_gohm);\\n        ohmEthFeed = AggregatorV3Interface(_ohmEthFeed);\\n        ethUsdFeed = AggregatorV3Interface(_ethUsdFeed);\\n    }\\n\\n    /**\\n     * @notice fetches the latest price\\n     * @return the price with 18 decimals\\n     */\\n    function fetchPrice() external view override returns (bool, uint) {\\n        (bool ethUsdSuccess, uint ethUsdPrice) = ethUsdFeed.safeLatestRoundData();\\n        (bool ohmEthSuccess, uint ohmEthPrice) = ohmEthFeed.safeLatestRoundData();\\n\\n        if (!ethUsdSuccess || !ohmEthSuccess) {\\n            return (false, 0);\\n        }\\n\\n         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / 1e9));\\n    }\\n}\",\"keccak256\":\"0x310814f94ec31e2b8e808d325ce99c15c594ee9a82869dc476619fe4557a7c91\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060405161071338038061071383398101604081905261002f91610194565b6001600160a01b03831661008a5760405162461bcd60e51b815260206004820152601860248201527f4f7261636c653a2030783020674f484d2061646472657373000000000000000060448201526064015b60405180910390fd5b6001600160a01b0382166100e05760405162461bcd60e51b815260206004820152601b60248201527f4f7261636c653a20307830204f484d2d455448206164647265737300000000006044820152606401610081565b6001600160a01b0381166101365760405162461bcd60e51b815260206004820152601b60248201527f4f7261636c653a20307830204554482d555344206164647265737300000000006044820152606401610081565b600080546001600160a01b039485166001600160a01b0319918216179091556001805493851693821693909317909255600280549190931691161790556101d7565b80516001600160a01b038116811461018f57600080fd5b919050565b6000806000606084860312156101a957600080fd5b6101b284610178565b92506101c060208501610178565b91506101ce60408501610178565b90509250925092565b61052d806101e66000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80630fdb11cf14610030575b600080fd5b610038610053565b60408051921515835260208301919091520160405180910390f35b600254600090819081908190610071906001600160a01b031661017a565b60015491935091506000908190610090906001600160a01b031661017a565b9150915083158061009f575081155b156100b257506000958695509350505050565b6001633b9aca0060008054906101000a90046001600160a01b03166001600160a01b0316632986c0e56040518163ffffffff1660e01b815260040160206040518083038186803b15801561010557600080fd5b505afa158015610119573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061013d9190610309565b670de0b6b3a764000061015087866104ab565b61015a919061039c565b61016491906104ab565b61016e919061039c565b95509550505050509091565b6000806000836001600160a01b031663313ce5676040518163ffffffff1660e01b815260040160206040518083038186803b1580156101b857600080fd5b505afa9250505080156101e8575060408051601f3d908101601f191682019092526101e591810190610372565b60015b6101f85750600093849350915050565b9050836001600160a01b031663feaf968c6040518163ffffffff1660e01b815260040160a06040518083038186803b15801561023357600080fd5b505afa925050508015610263575060408051601f3d908101601f1916820190925261026091810190610322565b60015b6102735750600093849350915050565b83601260ff881610156102aa5761028e60ff881660126104ca565b61029990600a610401565b6102a390826104ab565b90506102dc565b60128760ff1611156102dc576102c4601260ff89166104ca565b6102cf90600a610401565b6102d9908261039c565b90505b60019a909950975050505050505050565b80516001600160501b038116811461030457600080fd5b919050565b60006020828403121561031b57600080fd5b5051919050565b600080600080600060a0868803121561033a57600080fd5b610343866102ed565b9450602086015193506040860151925060608601519150610366608087016102ed565b90509295509295909350565b60006020828403121561038457600080fd5b815160ff8116811461039557600080fd5b9392505050565b6000826103b957634e487b7160e01b600052601260045260246000fd5b500490565b600181815b808511156103f95781600019048211156103df576103df6104e1565b808516156103ec57918102915b93841c93908002906103c3565b509250929050565b60006103958383600082610417575060016104a5565b81610424575060006104a5565b816001811461043a576002811461044457610460565b60019150506104a5565b60ff841115610455576104556104e1565b50506001821b6104a5565b5060208310610133831016604e8410600b8410161715610483575081810a6104a5565b61048d83836103be565b80600019048211156104a1576104a16104e1565b0290505b92915050565b60008160001904831182151516156104c5576104c56104e1565b500290565b6000828210156104dc576104dc6104e1565b500390565b634e487b7160e01b600052601160045260246000fdfea264697066735822122087ac55cf0b8fc3d1e342970d894e4e69a4272790a42d722840c8afa889d8bea164736f6c63430008060033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c80630fdb11cf14610030575b600080fd5b610038610053565b60408051921515835260208301919091520160405180910390f35b600254600090819081908190610071906001600160a01b031661017a565b60015491935091506000908190610090906001600160a01b031661017a565b9150915083158061009f575081155b156100b257506000958695509350505050565b6001633b9aca0060008054906101000a90046001600160a01b03166001600160a01b0316632986c0e56040518163ffffffff1660e01b815260040160206040518083038186803b15801561010557600080fd5b505afa158015610119573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061013d9190610309565b670de0b6b3a764000061015087866104ab565b61015a919061039c565b61016491906104ab565b61016e919061039c565b95509550505050509091565b6000806000836001600160a01b031663313ce5676040518163ffffffff1660e01b815260040160206040518083038186803b1580156101b857600080fd5b505afa9250505080156101e8575060408051601f3d908101601f191682019092526101e591810190610372565b60015b6101f85750600093849350915050565b9050836001600160a01b031663feaf968c6040518163ffffffff1660e01b815260040160a06040518083038186803b15801561023357600080fd5b505afa925050508015610263575060408051601f3d908101601f1916820190925261026091810190610322565b60015b6102735750600093849350915050565b83601260ff881610156102aa5761028e60ff881660126104ca565b61029990600a610401565b6102a390826104ab565b90506102dc565b60128760ff1611156102dc576102c4601260ff89166104ca565b6102cf90600a610401565b6102d9908261039c565b90505b60019a909950975050505050505050565b80516001600160501b038116811461030457600080fd5b919050565b60006020828403121561031b57600080fd5b5051919050565b600080600080600060a0868803121561033a57600080fd5b610343866102ed565b9450602086015193506040860151925060608601519150610366608087016102ed565b90509295509295909350565b60006020828403121561038457600080fd5b815160ff8116811461039557600080fd5b9392505050565b6000826103b957634e487b7160e01b600052601260045260246000fd5b500490565b600181815b808511156103f95781600019048211156103df576103df6104e1565b808516156103ec57918102915b93841c93908002906103c3565b509250929050565b60006103958383600082610417575060016104a5565b81610424575060006104a5565b816001811461043a576002811461044457610460565b60019150506104a5565b60ff841115610455576104556104e1565b50506001821b6104a5565b5060208310610133831016604e8410600b8410161715610483575081810a6104a5565b61048d83836103be565b80600019048211156104a1576104a16104e1565b0290505b92915050565b60008160001904831182151516156104c5576104c56104e1565b500290565b6000828210156104dc576104dc6104e1565b500390565b634e487b7160e01b600052601160045260246000fdfea264697066735822122087ac55cf0b8fc3d1e342970d894e4e69a4272790a42d722840c8afa889d8bea164736f6c63430008060033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "fetchPrice()": {
+        "returns": {
+          "_0": "the price with 18 decimals"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "fetchPrice()": {
+        "notice": "fetches the latest price"
+      }
+    },
+    "notice": "price oracle for gOHM-USD on the ethereum mainnet",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 3459,
+        "contract": "contracts/oracles/MainnetgOHMOracle.sol:MainnetgOHMOracle",
+        "label": "gOHM",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(IgOHM)3446"
+      },
+      {
+        "astId": 3462,
+        "contract": "contracts/oracles/MainnetgOHMOracle.sol:MainnetgOHMOracle",
+        "label": "ohmEthFeed",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_contract(AggregatorV3Interface)3179"
+      },
+      {
+        "astId": 3465,
+        "contract": "contracts/oracles/MainnetgOHMOracle.sol:MainnetgOHMOracle",
+        "label": "ethUsdFeed",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_contract(AggregatorV3Interface)3179"
+      }
+    ],
+    "types": {
+      "t_contract(AggregatorV3Interface)3179": {
+        "encoding": "inplace",
+        "label": "contract AggregatorV3Interface",
+        "numberOfBytes": "20"
+      },
+      "t_contract(IgOHM)3446": {
+        "encoding": "inplace",
+        "label": "contract IgOHM",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}

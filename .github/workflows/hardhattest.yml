@@ -30,20 +30,20 @@ jobs:
           node-version: 14
 
       - name: Install 🔧
-        run: npm install
+        run: yarn install
 
       - name: Compile 🛠
-        run: npx hardhat compile
+        run: yarn compile
 
       - name: Test 🧪
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-        run: npx hardhat test
+        run: yarn test
 
       - name: Coverage 🙈
         env:
           ALCHEMY_API_KEY: ${{ secrets.ALCHEMY_API_KEY }}
-        run: npx hardhat coverage
+        run: yarn coverage
 
       # - name: Deploy 🚀
       #   run: |

@@ -1,6 +1,7 @@
 import * as dotenv from "dotenv";
 
 import { HardhatUserConfig } from "hardhat/config";
+import { NetworkUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
@@ -9,6 +10,27 @@ import "solidity-coverage";
 import "hardhat-deploy";
 
 dotenv.config();
+
+const privateKey: string | undefined = process.env.PRIVATE_KEY ??  "NO_PRIVATE_KEY";
+const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_API_KEY";
+
+const chainIds = {
+    goerli: 5,
+    hardhat: 31337,
+    kovan: 42,
+    mainnet: 1,
+    rinkeby: 4,
+    ropsten: 3,
+};
+
+function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
+    const url = `https://eth-${network}.alchemyapi.io/v2/${alchemyApiKey}`;
+    return {
+        accounts: privateKey !== "NO_PRIVATE_KEY" ? [`${privateKey}`] : [],
+        chainId: chainIds[network],
+        url,
+    };
+}
 
 const config: HardhatUserConfig = {
     solidity: {
@@ -23,25 +45,16 @@ const config: HardhatUserConfig = {
     namedAccounts: {
         deployer: {
             default: 0,
-            1: "", // TODO - mainnet deployer
-            3: "", // TODO - ropsten deployer
         },
         owner: {
             default: 1,
-            1: "", // TODO - mainnet owner (e.g. multisig)
-            3: "", // TODO - ropsten owner
         },
     },
 
     networks: {
-        mainnet: {
-            url: process.env.MAINNET_URL || "",
-            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
-        ropsten: {
-            url: process.env.ROPSTEN_URL || "",
-            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
-        },
+        // mainnet: getChainConfig("mainnet"),
+        // ropsten: getChainConfig("ropsten"),
+        // rinkeby: getChainConfig("rinkeby"),
         hardhat: {
             live: false,
             saveDeployments: true,
