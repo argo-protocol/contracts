@@ -45,13 +45,9 @@ const config: HardhatUserConfig = {
     namedAccounts: {
         deployer: {
             default: 0,
-            1: "", // TODO - mainnet deployer
-            3: "", // TODO - ropsten deployer
         },
         owner: {
             default: 1,
-            1: "", // TODO - mainnet owner (e.g. multisig)
-            3: "", // TODO - ropsten owner
         },
     },
 
