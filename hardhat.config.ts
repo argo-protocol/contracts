@@ -79,9 +79,9 @@ const config: HardhatUserConfig = {
     },
 
     networks: {
-        // mainnet: getChainConfig("mainnet"),
-        // ropsten: getChainConfig("ropsten"),
-        // rinkeby: getChainConfig("rinkeby"),
+        mainnet: getChainConfig("mainnet"),
+        ropsten: getChainConfig("ropsten"),
+        rinkeby: getChainConfig("rinkeby"),
         hardhat: {
             live: false,
             saveDeployments: true,
