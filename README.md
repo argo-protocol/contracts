@@ -38,7 +38,13 @@ This project uses [hardhat-deploy](https://github.com/wighawag/hardhat-deploy) t
 To deploy locally:
 
 ```
-npx hardhat deploy --network localhost
+npx hardhat deploy --network rinkeby
+```
+
+View deployments:
+
+```
+npx hardhat deployments --network rinkeby
 ```
 
 ### Run locally

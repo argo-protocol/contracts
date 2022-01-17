@@ -12,6 +12,22 @@ import "hardhat-deploy";
 import { BigNumber } from "ethers";
 
 task(
+    "deployments",
+    "Print the list of deployment addresses for the current network",
+    async (args, hre) => {
+      const allDeployments = await hre.deployments.all();
+      const deployments = Object.keys(allDeployments)
+        .sort()
+        .map((name) => ({
+          name: name,
+          address: allDeployments[name].address,
+        }));
+      console.table(deployments);
+    }
+  );
+  
+
+task(
   "markets",
   "Print the markets created by the currently deployed MarketFactory",
   async (args, hre) => {
