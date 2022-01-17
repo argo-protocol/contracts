@@ -10,6 +10,7 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
 import { BigNumber } from "ethers";
+import deployConfig from './deploy.config';
 
 task(
     "deployments",
@@ -89,9 +90,16 @@ const config: HardhatUserConfig = {
         deployer: {
             default: 0,
         },
-        owner: {
+        operatorMultisig: {
             default: 1,
-        },
+            rinkeby: deployConfig.rinkeby.operatorMultisig,
+            mainnet: deployConfig.mainnet.operatorMultisig,
+        }, 
+        treasuryMultisig: {
+            default: 2,
+            rinkeby: deployConfig.rinkeby.treasuryMultisig,
+            mainnet: deployConfig.mainnet.treasuryMultisig
+        }
     },
 
     networks: {
