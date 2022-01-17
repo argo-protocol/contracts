@@ -25,7 +25,7 @@ contract MarketFactory is Ownable {
      */
     constructor(address _owner) {
         zeroInterestMarketImpl = new ZeroInterestMarket();
-        zeroInterestMarketImpl.initialize(_owner, address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
+        zeroInterestMarketImpl.initialize(address(0x0), address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
         transferOwnership(_owner);
     }
 
