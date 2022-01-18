@@ -25,6 +25,8 @@
     "@types/yargs": "^17.0.8",
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
+    "@uniswap/lib": "^4.0.1-alpha",
+    "@uniswap/v2-core": "github:uniswap/v2-core",
     "chai": "^4.2.0",
     "dotenv": "^10.0.0",
     "eslint": "^7.29.0",
@@ -47,6 +49,5 @@
     "typechain": "^5.1.2",
     "typescript": "^4.5.2",
     "yargs": "^17.3.1"
-  },
-  "dependencies": {}
+  }
 }
