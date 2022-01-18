@@ -26,7 +26,7 @@
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
     "@uniswap/lib": "^4.0.1-alpha",
-    "@uniswap/v2-core": "github:uniswap/v2-core",
+    "@uniswap/v2-core": "^1.0.1",
     "chai": "^4.2.0",
     "dotenv": "^10.0.0",
     "eslint": "^7.29.0",
