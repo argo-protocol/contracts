@@ -31,8 +31,8 @@ jobs:
 
       - name: Install 🔧
         uses: borales/actions-yarn@v2.3.0
-            with:
-              cmd: install # will run `yarn install` command        
+        with:
+          cmd: install # will run `yarn install` command        
 
       - name: Compile 🛠
         run: yarn compile
