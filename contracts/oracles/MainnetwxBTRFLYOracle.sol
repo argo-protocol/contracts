@@ -32,8 +32,7 @@ interface IwxBTRFLY {
 contract MainnetwxBTRFLYOracle is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IwxBTRFLY private wxBTRFLY;
-    address private ohm;
+    IwxBTRFLY private wxBTRFLY;    
     address private btrfly;
     UniswapPairOracle private uniswapPairOracle;
     AggregatorV3Interface private ohmEthFeed;
@@ -41,21 +40,18 @@ contract MainnetwxBTRFLYOracle is IOracle {
 
     constructor(
         address _wxBTRFLY,
-        address _ohm,
         address _btrfly,
         address _uniswapPairOracle, // sushiswap oracle
         address _ohmEthFeed,
         address _ethUsdFeed
     ) {
         require(_wxBTRFLY != address(0), "Oracle: 0x0 wxBTRFLY address");
-        require(_ohm != address(0), "Oracle: 0x0 OHM address");
         require(_btrfly != address(0), "Oracle: 0x0 BTRFLY address");
         require(_uniswapPairOracle != address(0), "Oracle: 0x0 _uniswapPairOracle address");
         require(_ohmEthFeed != address(0), "Oracle: 0x0 OHM-ETH address");
         require(_ethUsdFeed != address(0), "Oracle: 0x0 ETH-USD address");
 
         wxBTRFLY = IwxBTRFLY(_wxBTRFLY);
-        ohm = _ohm;
         btrfly = _btrfly;
         ohmEthFeed = AggregatorV3Interface(_ohmEthFeed);
         ethUsdFeed = AggregatorV3Interface(_ethUsdFeed);
@@ -77,14 +73,6 @@ contract MainnetwxBTRFLYOracle is IOracle {
         (bool ethUsdSuccess, uint256 ethUsdPrice) = ethUsdFeed.safeLatestRoundData();
         (bool ohmEthSuccess, uint256 ohmEthPrice) = ohmEthFeed.safeLatestRoundData();
 
-//on jan 6 at 1800 PST (time of the block at 13955627)
-//ohmv1 = 380, ohmv2=300 
-//btrfly = 3180
-//eth = 3392
-//of 1 ohm = 0.094339622641509 btrfly
-        // uint256 x = uniswapPairOracle.consult(btrfly, 1e9);
-        // console.log("consult btrfly:", x);
-
         uint256 btrflyOhmPrice = uniswapPairOracle.consult(btrfly, 1e9);
         console.log("consult btrflyOhmPrice:", btrflyOhmPrice); //10
 
@@ -97,7 +85,8 @@ contract MainnetwxBTRFLYOracle is IOracle {
         uint ohmUsdPrice = ohmEthPrice * ethUsdPrice / 1e36; //386
         console.log("ohmUsdPrice:", ohmUsdPrice);
 
-    uint btrflyUsdPrice = btrflyOhmPrice * ohmEthPrice * ethUsdPrice / 1e45; //1e9 for btrflyOhm, 1e18 for ohmEthPrice, 1e18 for ethUsdPrice
+    uint btrflyUsdPrice = btrflyOhmPrice * ohmEthPrice * ethUsdPrice / 1e36; //1e18 for ohmEthPrice, 1e18 for ethUsdPrice
+    //1e9 for btrflyOhm
 
     console.log("btrflyUsdPrice:", btrflyUsdPrice);
         return (true, wxBTRFLY.wBTRFLYValue(btrflyUsdPrice));
