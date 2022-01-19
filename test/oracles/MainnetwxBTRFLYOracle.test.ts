@@ -81,7 +81,7 @@ describe("MainnetwxBTRFLYOracle", () => {
             //so 1 ohm = 0.094339622641509 btrfly
             //so btrflyUsdPrice = 3245274464515 / 1e9 = 3245.274464515
                                     
-            expect(price).to.equal("2146454690831646759477");
+            expect(price).to.equal("2146454690831646759477"); //TODO wait until new contract pricing is published on coingecko/cmc/zapper just to be sure
         });
     });
 });
