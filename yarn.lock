@@ -1282,9 +1282,9 @@
     "@typescript-eslint/types" "4.33.0"
     eslint-visitor-keys "^2.0.0"
 
-"@uniswap/lib@https://github.com/artman325/uniswap-lib#e28aa48a641044e3903fef81bde75640f3d944e1":
+"@uniswap/lib@https://github.com/kushal256/uniswap-lib/archive/refs/tags/v5.0.0.tar.gz":
   version "4.0.1-alpha"
-  resolved "https://github.com/artman325/uniswap-lib#e28aa48a641044e3903fef81bde75640f3d944e1"
+  resolved "https://github.com/kushal256/uniswap-lib/archive/refs/tags/v5.0.0.tar.gz#eac11387388c04b62e731613189d9608bda5fc03"
 
 "@uniswap/v2-core@^1.0.1":
   version "1.0.1"
