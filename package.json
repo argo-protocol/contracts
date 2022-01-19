@@ -25,7 +25,7 @@
     "@types/yargs": "^17.0.8",
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
-    "@uniswap/lib": "^4.0.1-alpha",
+    "@uniswap/lib": "github:artman325/uniswap-lib",
     "@uniswap/v2-core": "^1.0.1",
     "chai": "^4.2.0",
     "dotenv": "^10.0.0",
