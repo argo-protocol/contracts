@@ -6,7 +6,7 @@ import { ZeroInterestMarket } from "../contracts/ZeroInterestMarket.sol";
 import { DebtToken } from "../contracts/DebtToken.sol";
 import { TestAccount } from "./utils/TestAccount.sol";
 import { StubOracle } from "../contracts/stubs/StubOracle.sol";
-import { ERC20Mock } from "./utils/ERC20Mock.sol";
+import { ERC20Mock } from "../contracts/testing/ERC20Mock.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 
