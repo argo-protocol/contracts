@@ -47,7 +47,7 @@ contract MainnetwxBTRFLYOracle is IOracle {
     ) {
         require(_wxBTRFLY != address(0), "Oracle: 0x0 wxBTRFLY address");
         require(_btrfly != address(0), "Oracle: 0x0 BTRFLY address");
-        require(_uniswapPairOracle != address(0), "Oracle: 0x0 _uniswapPairOracle address");
+        require(_uniswapPairOracle != address(0), "Oracle: 0x0 pairOracle address");
         require(_ohmEthFeed != address(0), "Oracle: 0x0 OHM-ETH address");
         require(_ethUsdFeed != address(0), "Oracle: 0x0 ETH-USD address");
 
