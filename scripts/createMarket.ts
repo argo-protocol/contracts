@@ -21,7 +21,7 @@ async function main() {
             },
             debtToken: {
                 type: "string",
-                demandOption: true,
+                demandOption: false,
                 desc: "address of debtToken",
             },
             oracle: {
@@ -47,16 +47,18 @@ async function main() {
         })
         .parseSync();
 
-    const { owner } = await hre.getNamedAccounts();
-    const ownerSigner = await hre.ethers.getSigner(owner);
+    const { operatorMultisig } = await hre.getNamedAccounts();
+    const ownerSigner = await hre.ethers.getSigner(operatorMultisig);
 
     const deployment = await hre.deployments.get("MarketFactory");
     const marketFactory = (await hre.ethers.getContractAt("MarketFactory", deployment.address)).connect(ownerSigner);
 
+    const debtToken = argv.debtToken || (await hre.deployments.get("DebtToken")).address;
+
     const args = [
         argv.treasury,
         argv.collateralToken,
-        argv.debtToken,
+        debtToken,
         argv.oracle,
         argv.maxLoanToValue,
         argv.borrowRate,
