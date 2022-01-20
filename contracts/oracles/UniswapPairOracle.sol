@@ -9,7 +9,7 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {UniswapV2OracleLibrary} from "../libraries/uniswap/UniswapV2OracleLibrary.sol";
 import {UniswapV2Library} from "../libraries/uniswap/UniswapV2Library.sol";
-import "hardhat/console.sol";
+
 // Fixed window oracle that recomputes the average price for the entire period once every period
 // Note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
 contract UniswapPairOracle is Ownable {
@@ -34,8 +34,7 @@ contract UniswapPairOracle is Ownable {
         address tokenA,
         address tokenB,
         address _owner    
-    ) public{
-        console.log("UniswapPairOracle1");
+    ) public{        
         IUniswapV2Pair _pair = IUniswapV2Pair(UniswapV2Library.pairFor(factory, tokenA, tokenB));
         pair = _pair;
         token0 = _pair.token0();
@@ -46,8 +45,6 @@ contract UniswapPairOracle is Ownable {
         uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = _pair.getReserves();
         require(reserve0 != 0 && reserve1 != 0, "UniswapPairOracle: NO_RESERVES"); // Ensure that there's liquidity in the pair
-console.log("token0:", _pair.token0());
-console.log("token1:", _pair.token1());
         Ownable._transferOwnership(_owner);    
     }
 
