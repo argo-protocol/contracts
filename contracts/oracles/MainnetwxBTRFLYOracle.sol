@@ -32,7 +32,7 @@ interface IwxBTRFLY {
 contract MainnetwxBTRFLYOracle is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IwxBTRFLY private wxBTRFLY;    
+    IwxBTRFLY private wxBTRFLY;
     address private btrfly;
     UniswapPairOracle private uniswapPairOracle;
     AggregatorV3Interface private ohmEthFeed;
@@ -82,13 +82,13 @@ contract MainnetwxBTRFLYOracle is IOracle {
 
         console.log("ohmEthPrice:", ohmEthPrice);
         console.log("ethUsdPrice:", ethUsdPrice);
-        uint ohmUsdPrice = ohmEthPrice * ethUsdPrice / 1e36; //386
+        uint256 ohmUsdPrice = (ohmEthPrice * ethUsdPrice) / 1e36; //386
         console.log("ohmUsdPrice:", ohmUsdPrice);
 
-    uint btrflyUsdPrice = btrflyOhmPrice * ohmEthPrice * ethUsdPrice / 1e36; //1e18 for ohmEthPrice, 1e18 for ethUsdPrice
-    //1e9 for btrflyOhm
+        uint256 btrflyUsdPrice = (btrflyOhmPrice * ohmEthPrice * ethUsdPrice) / 1e36; //1e18 for ohmEthPrice, 1e18 for ethUsdPrice
+        //1e9 for btrflyOhm
 
-    console.log("btrflyUsdPrice:", btrflyUsdPrice);
+        console.log("btrflyUsdPrice:", btrflyUsdPrice);
         return (true, wxBTRFLY.wBTRFLYValue(btrflyUsdPrice));
     }
 }

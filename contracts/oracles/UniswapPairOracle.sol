@@ -12,6 +12,8 @@ import {UniswapV2Library} from "../libraries/uniswap/UniswapV2Library.sol";
 
 // Fixed window oracle that recomputes the average price for the entire period once every period
 // Note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
+// solhint-disable reason-string
+// solhint-disable var-name-mixedcase
 contract UniswapPairOracle is Ownable {
     using FixedPoint for *;
 
