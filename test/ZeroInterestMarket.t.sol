@@ -73,7 +73,7 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount, uint initialPrice, uint borrowAmount) public {
+    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount, uint _initialPrice, uint _borrowAmount, uint _debtMintAmount, uint _collateralAmount) public {
         if (_newPrice > 1e60) return;
         if (_newPrice > 1e5) return;
         if (_repayAmount > 1e60) return;
@@ -81,14 +81,14 @@ contract ZeroInterestMarketTest is DSTest {
 
         init();
 
-        // uint initialPrice = 100000e18; // $100,000
-        // uint borrowAmount = 45000e18;
+        // uint _initialPrice = 100000e18; // $100,000
+        // uint _borrowAmount = 45000e18;
 
         debtToken.mint(address(liquidator), _repayAmount);
-        debtToken.mint(address(market), 60000e18);
-        oracle.setPrice(initialPrice);
-        collateralToken.approve(address(market), 1e18);
-        market.depositAndBorrow(1e18, borrowAmount);
+        debtToken.mint(address(market), _debtMintAmount); //60000e18
+        oracle.setPrice(_initialPrice);
+        collateralToken.approve(address(market), _collateralAmount); //1e18
+        market.depositAndBorrow(1e18, _borrowAmount);
 
         oracle.setPrice(_newPrice);
 
