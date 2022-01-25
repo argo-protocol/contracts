@@ -1,9 +1,5 @@
 name: "forge test"
-on:
-  push:
-    branches:
-      - main
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   run-ci:
