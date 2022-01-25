@@ -21,7 +21,7 @@ contract ZeroInterestMarketTest is DSTest {
     uint public constant MAX_LTV = 50000;
     uint public constant BORROW_FEE = 1500;
 
-    function setUp() public {
+    function init() public {
         owner = new TestAccount("owner", address(0), address(0));
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
@@ -50,6 +50,8 @@ contract ZeroInterestMarketTest is DSTest {
         if (_price > 1e40) return;
         if (_price < 1e5) return;
 
+        init();
+
         uint debtAmount = _borrowAmount + (_borrowAmount * BORROW_FEE / market.BORROW_RATE_PRECISION());
         debtToken.mint(address(market), debtAmount);
         oracle.setPrice(_price);
@@ -71,14 +73,16 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount) public {
+    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount, uint initialPrice, uint borrowAmount) public {
         if (_newPrice > 1e60) return;
         if (_newPrice > 1e5) return;
         if (_repayAmount > 1e60) return;
         if (_repayAmount < 1e5) return;
 
-        uint initialPrice = 100000e18; // $100,000
-        uint borrowAmount = 45000e18;
+        init();
+
+        // uint initialPrice = 100000e18; // $100,000
+        // uint borrowAmount = 45000e18;
 
         debtToken.mint(address(liquidator), _repayAmount);
         debtToken.mint(address(market), 60000e18);
