@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 
 import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 contract TestFlashBorrower is IERC3156FlashBorrower {
     bool private approveFee;
