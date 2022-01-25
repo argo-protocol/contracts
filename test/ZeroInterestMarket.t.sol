@@ -73,14 +73,20 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
+    function testSpecific() public {
+        testLiquidateAlwaysProfitableForLiquidator(1e35, 1e30, 100000e18, 45000e18, 60000e18, 1e18);
+    }
+
     function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount, uint _initialPrice, uint _borrowAmount, uint _debtMintAmount, uint _collateralAmount) public {
+            
         if (_newPrice > 1e60) return;
-        if (_newPrice > 1e5) return;
-        if (_repayAmount > 1e60) return;
-        if (_repayAmount < 1e5) return;
-
+        if (_newPrice < 1e5) return;
+        
+//         if (_repayAmount > 1e60) return;
+//         if (_repayAmount < 1e5) return;
+// assert(false);
         init();
-
+   
         // uint _initialPrice = 100000e18; // $100,000
         // uint _borrowAmount = 45000e18;
 
@@ -93,12 +99,13 @@ contract ZeroInterestMarketTest is DSTest {
         oracle.setPrice(_newPrice);
 
         if (_newPrice < 90000e18) {
+            assertEq(_newPrice, _repayAmount); // TODO Doesn't make sense, should get here and fail at least once!
             // this will cause a liquidation
             liquidator.liquidate(address(this), _repayAmount);
             uint valueOfLiqAssets = collateralToken.balanceOf(address(liquidator)) * _newPrice / market.LAST_PRICE_PRECISION();
             uint amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
-            assertGt(valueOfLiqAssets, amountPaid);
-        } else {
+            assertGt(valueOfLiqAssets, amountPaid);            
+        } else {            
             // revert for not liquidating
             try liquidator.liquidate(address(this), _repayAmount) {
                 assert(false);
