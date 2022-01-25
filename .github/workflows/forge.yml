@@ -40,7 +40,7 @@ jobs:
           cargo install --git https://github.com/gakonst/foundry --bin forge --locked
 
       - name: Run tests
-        run: source .dapprc; forge test
+        run: source .dapprc; make; forge test
         env:
           # Only fuzz deeply if we're pushing to main or this is a PR to main:
           #TODO this is always false, need to ensure it works on CI
