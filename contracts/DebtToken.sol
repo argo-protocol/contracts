@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+////      ___           ___           ___           ___
+////     /\  \         /\  \         /\__\         /\  \
+////    /::\  \       /::\  \       /:/ _/_       /::\  \
+////   /:/\:\  \     /:/\:\__\     /:/ /\  \     /:/\:\  \
+////  /:/ /::\  \   /:/ /:/  /    /:/ /::\  \   /:/  \:\  \
+//// /:/_/:/\:\__\ /:/_/:/__/___ /:/__\/\:\__\ /:/__/ \:\__\
+//// \:\/:/  \/__/ \:\/:::::/  / \:\  \ /:/  / \:\  \ /:/  /
+////  \::/__/       \::/~~/~~~~   \:\  /:/  /   \:\  /:/  /
+////   \:\  \        \:\~~\        \:\/:/  /     \:\/:/  /
+////    \:\__\        \:\__\        \::/  /       \::/  /
+////     \/__/         \/__/         \/__/         \/__/
+
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
@@ -11,16 +23,16 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint private maxFlashLoanAmount;
-    uint private flashFeeRate;
-    uint public feesCollected;
-    uint private constant FLASH_FEE_PRECISION = 1e5;
+    uint256 private maxFlashLoanAmount;
+    uint256 private flashFeeRate;
+    uint256 public feesCollected;
+    uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
-    event FlashFeeRateUpdated(uint newFlashFeeRate);
-    event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
+    event FlashFeeRateUpdated(uint256 newFlashFeeRate);
+    event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
     event TreasuryUpdated(address newTreasury);
-    event FeesHarvested(uint fees);
+    event FeesHarvested(uint256 fees);
 
     constructor(address _treasury) ERC20("SIN USD", "SIN") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
@@ -38,7 +50,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint _amount) external onlyOwner {
+    function mint(address _to, uint256 _amount) external onlyOwner {
         _mint(_to, _amount);
     }
 
@@ -46,7 +58,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint _amount) external {
+    function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
 
@@ -59,12 +71,12 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @param _token The address of the token that is requested.
      * @return The amont of token that can be loaned.
      */
-    function maxFlashLoan(address _token) public view override returns (uint) {
+    function maxFlashLoan(address _token) public view override returns (uint256) {
         return _token == address(this) ? maxFlashLoanAmount : 0;
     }
 
     /**
-     * @dev Returns the fee applied when doing flash loans. 
+     * @dev Returns the fee applied when doing flash loans.
      * @param _token The token to be flash loaned.
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
@@ -114,7 +126,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -124,7 +136,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice sets the flash loan cap
      * @param _maxFlashLoanAmount the new amount
      */
-    function setMaxFlashLoanAmount(uint _maxFlashLoanAmount) external onlyOwner {
+    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyOwner {
         maxFlashLoanAmount = _maxFlashLoanAmount;
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
     }
@@ -143,7 +155,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice harvests fees from flash loans to the treasury
      */
     function harvestFees() external {
-        uint fees = feesCollected;
+        uint256 fees = feesCollected;
         feesCollected = 0;
         emit FeesHarvested(fees);
 
