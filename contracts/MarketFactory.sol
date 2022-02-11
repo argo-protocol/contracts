@@ -48,6 +48,11 @@ contract MarketFactory is Ownable {
         uint256 _borrowRate,
         uint256 _liquidationPenalty
     ) public onlyOwner {
+        require(_treasury != address(0), "0x0 treasury address");
+        require(_collateralToken != address(0), "0x0 collateralToken address");
+        require(_debtToken != address(0), "0x0 debtToken address");
+        require(_oracle != address(0), "0x0 debtToken address");
+
         ZeroInterestMarket market = ZeroInterestMarket(Clones.clone(address(zeroInterestMarketImpl)));
         market.initialize(
             owner(),
