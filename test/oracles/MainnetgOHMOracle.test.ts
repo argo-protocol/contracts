@@ -1,33 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { MainnetgOHMOracle, MainnetgOHMOracle__factory } from "../../typechain";
-import { ethers, network } from "hardhat";
-import chai, { expect } from "chai";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-
-chai.use(smock.matchers);
-
-
-async function fork_network(blockNumber = 13955627) {
-    /// Use mainnet fork as provider
-    return network.provider.request({
-        method: "hardhat_reset",
-        params: [
-            {
-                forking: {
-                    jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-                    blockNumber: blockNumber,
-                },
-            },
-        ],
-    });
-}
-
-async function fork_reset() {
-    return await network.provider.request({
-        method: "hardhat_reset",
-        params: [],
-    });
-}
+import { ethers } from "hardhat";
+import { expect } from "chai";
+import { forkNetwork, forkReset, impersonate } from "../utils/vm";
 
 const E18 = '000000000000000000'; // 18 zeros
 
@@ -37,7 +12,7 @@ describe("MainnetgOHMOracle", () => {
 
     describe("fetchPrice", () => {
         before(async () => {
-            await fork_network();
+            await forkNetwork();
             const GOHM_ADDRESS = "0x0ab87046fBb341D058F17CBC4c1133F25a20a52f";
             // NB: this is the v1 OHM address
             const OHM_ETH_ADDRESS = "0x90c2098473852e2f07678fe1b6d595b1bd9b16ed";
@@ -52,7 +27,7 @@ describe("MainnetgOHMOracle", () => {
         });
 
         after(async () => {
-            await fork_reset();
+            await forkReset();
         });
 
         it("can fetch the current price", async () => {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { IPSM } from "./interfaces/IPSM.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -10,7 +11,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  * stablecoin assesses a buy and sell fee on swaps. While fees are collected in both the
  * reserve and debt tokens, they are only harvested in debt tokens.
  */
-contract PegStability is Ownable {
+contract PegStability is Ownable, IPSM {
     using SafeERC20 for IERC20Metadata;
 
     event FeesHarvested(uint fees);
@@ -23,9 +24,9 @@ contract PegStability is Ownable {
 
     IERC20Metadata immutable public debtToken;
     IERC20Metadata immutable public reserveToken;
-    uint256 public buyFee;
-    uint256 public sellFee;
-    uint256 constant public FEE_PRECISION = 1e5;
+    uint256 public override buyFee;
+    uint256 public override sellFee;
+    uint256 constant public override FEE_PRECISION = 1e5;
 
     uint256 public feesCollected;
     address public treasury;
@@ -56,7 +57,7 @@ contract PegStability is Ownable {
      * requires approval
      * @param _amount the amount of debt token to buy
      */
-    function buy(uint256 _amount) external {
+    function buy(uint256 _amount) external override {
         // ensure we can still withdraw fees
         require(_amount + feesCollected <= debtToken.balanceOf(address(this)), "insufficient balance");
 
@@ -75,7 +76,7 @@ contract PegStability is Ownable {
      * requires approval
      * @param _amount the amount of debt token to sell
      */
-    function sell(uint256 _amount) external {
+    function sell(uint256 _amount) external override {
         uint256 fees = (_amount * sellFee) / FEE_PRECISION;
         feesCollected = feesCollected + fees;
 
