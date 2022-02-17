@@ -15,8 +15,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const oracleDeployment = await hre.deployments.get("gOhmOracle");
     const oracle = await hre.ethers.getContractAt("StubOracle", oracleDeployment.address);
-    await oracle.setPrice(hre.ethers.utils.parseEther("1"));
-    hre.deployments.log("StubOracle price set to 1");
+    await oracle.setPrice(hre.ethers.utils.parseEther("1.1"));
+    hre.deployments.log("StubOracle price set to 1.1");
 
     const debtTokenDeployment = await hre.deployments.get("DebtToken");
 
@@ -31,13 +31,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
             oracleDeployment.address,
             "15000",
             "1000",
-            "1000"
+            "10000"
         );
     await tx.wait();
     const logs = await marketFactory.queryFilter(marketFactory.filters.CreateMarket(), "latest");
     const id = logs[0].args[0];
     const marketAddr = await marketFactory.markets(id);
     hre.deployments.log(`New Market ${id} at ${marketAddr}`);
+
+    const market = await hre.ethers.getContractAt("ZeroInterestMarket", marketAddr);
+    await market.connect(signer).updatePrice();
 };
 func.tags = ["Fixtures"];
 func.dependencies = ["MarketFactory", "StubDai", "DebtToken", "mainnet-gOHM"];
