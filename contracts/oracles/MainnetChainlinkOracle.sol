@@ -17,7 +17,7 @@ contract MainnetChainlinkOracle is IOracle {
     constructor(        
         address _chainlinkUsdFeed
     ) {
-        require(_chainlinkUsdFeed != address(0), "Oracle: 0x0 _chainlinkUsdFeed address");
+        require(_chainlinkUsdFeed != address(0), "Oracle: 0x0 chainlink address");
 
         chainlinkUsdFeed = AggregatorV3Interface(_chainlinkUsdFeed);        
     }
