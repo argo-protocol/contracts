@@ -10,35 +10,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const debtToken = await hre.deployments.get("DebtToken");
 
     if (config.dai === hre.ethers.constants.AddressZero) {
-        assert(!hre.network.live, "can't have MockERC20s in live environments");
-        hre.deployments.log("deploying mock reserve token");
-        let ret = await deploy("StubDai", {
-            contract: "ERC20Mock",
-            from: deployer,
-            args: [
-                "Mock DAI",
-                "mDAI",
-                deployer,
-                0
-            ]
-        });
-
-        config.dai = ret.address;
+        hre.deployments.log("Using mock reserve token");
+        const daiDeployment = await hre.deployments.get("StubDai");
+        config.dai = daiDeployment.address;
     }
 
     await deploy("DaiPSM", {
         contract: "PegStability",
         from: deployer,
-        args: [
-            debtToken.address,
-            config.dai,
-            config.psmBuyFee,
-            config.psmSellFee,
-            config.treasuryMultisig,
-        ],
+        args: [debtToken.address, config.dai, config.psmBuyFee, config.psmSellFee, config.treasuryMultisig],
         log: true,
     });
 };
+func.dependencies = ["StubDai", "DebtToken"];
 func.tags = ["PegStability"];
 export default func;
-
