@@ -29,8 +29,6 @@ async function fork_reset() {
     });
 }
 
-const E18 = '000000000000000000'; // 18 zeros
-
 describe("MainnetstEthOracle", () => {
     let owner: SignerWithAddress;
     let oracle: IOracle;

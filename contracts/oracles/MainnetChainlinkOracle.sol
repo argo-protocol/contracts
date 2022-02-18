@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import { IOracle } from "../interfaces/IOracle.sol";
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 import { SafeAggregatorV3 } from "../libraries/SafeAggregatorV3.sol";
-import { UniswapPairOracle } from "./UniswapPairOracle.sol";
 
 /**
  * @notice price oracle for chainlink denominated in USD, ethereum mainnet
