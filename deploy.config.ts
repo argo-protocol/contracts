@@ -18,7 +18,7 @@ interface ChainConfig {
     uniswapOracle: string;
 }
 
-export default {
+let config = {
     mainnet: {
         treasuryMultisig: ZERO_ADDRESS, // TODO
         operatorMultisig: ZERO_ADDRESS, // TODO
@@ -67,3 +67,6 @@ export default {
         uniswapOracle: ZERO_ADDRESS,
     },
 } as { [name: string]: ChainConfig };
+config.localhost = config.hardhat;
+
+export default config;
