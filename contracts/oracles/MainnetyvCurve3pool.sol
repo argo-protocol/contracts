@@ -10,7 +10,7 @@ interface IYearnVault {
     }
 
 interface ICurvePool {
-    function get_virtual_price() external view returns (uint256 price);
+    function get_virtual_price() external view returns (uint256 price); //solhint-disable-line func-name-mixedcase
 }
 
 /**
