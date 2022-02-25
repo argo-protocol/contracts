@@ -5,6 +5,7 @@ import { IOracle } from "../interfaces/IOracle.sol";
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 import { SafeAggregatorV3 } from "../libraries/SafeAggregatorV3.sol";
 import { UniswapPairOracle } from "./UniswapPairOracle.sol";
+import "hardhat/console.sol";
 
 interface IwxBTRFLY {
     /**
@@ -78,8 +79,18 @@ contract MainnetwxBTRFLYOracle is IOracle {
             return (false, 0);
         }
 
-        uint256 btrflyUsdPrice = (btrflyOhmPrice * ohmEthPrice * ethUsdPrice) / 1e36; //1e18 for ohmEthPrice, 1e18 for ethUsdPrice, 1e9 for btrflyOhm
+        uint256 btrflyUsdPrice = (btrflyOhmPrice * ohmEthPrice * ethUsdPrice); //1e18 for ohmEthPrice, 1e18 for ethUsdPrice, 1e9 for btrflyOhm
 
-        return (true, wxBTRFLY.wBTRFLYValue(btrflyUsdPrice));
+        console.log("ethUsdPrice", ethUsdPrice);
+        console.log("ohmEthPrice", ohmEthPrice);
+        console.log("btrflyOhmPrice", btrflyOhmPrice);
+        console.log("btrflyUsdPrice", btrflyUsdPrice);
+
+        uint256 wxFactor = wxBTRFLY.wBTRFLYValue(1e9);
+        console.log("wxFactor", wxFactor);
+        uint256 result = btrflyUsdPrice / wxFactor / 1e9;
+        console.log("result", result);
+
+        return (true, result);
     }
 }
