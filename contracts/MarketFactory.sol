@@ -21,12 +21,12 @@ contract MarketFactory is Ownable {
 
     /**
      * @notice Create new MarketFactory with an owner
-     * @param _owner Owner of the factory and all markets
+     * @param owner_ Owner of the factory and all markets
      */
-    constructor(address _owner) {
+    constructor(address owner_) {
         zeroInterestMarketImpl = new ZeroInterestMarket();
         zeroInterestMarketImpl.initialize(address(0x0), address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
-        transferOwnership(_owner);
+        transferOwnership(owner_);
     }
 
     /**
