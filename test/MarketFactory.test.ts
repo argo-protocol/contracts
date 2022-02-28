@@ -19,6 +19,11 @@ describe("MarketFactory", () => {
             .deploy(owner.address);
     });
 
+    it("reverts if owner is 0x0", async () => {
+        const f = (await ethers.getContractFactory("MarketFactory")).connect(deployer);
+        await expect(f.deploy(ethers.constants.AddressZero)).to.be.revertedWith("0x0 owner address");
+    });
+
     it("transfers ownership on construction", async () => {
         expect(await marketFactory.owner()).to.eq(owner.address);
     });

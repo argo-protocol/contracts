@@ -24,6 +24,8 @@ contract MarketFactory is Ownable {
      * @param owner_ Owner of the factory and all markets
      */
     constructor(address owner_) {
+        require(owner_ != address(0), "0x0 owner address");
+
         zeroInterestMarketImpl = new ZeroInterestMarket();
         zeroInterestMarketImpl.initialize(address(0x0), address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
         transferOwnership(owner_);
