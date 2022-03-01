@@ -26,8 +26,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event TreasuryUpdated(address newTreasury);
     event OracleUpdated(address oracle);
     event LastPriceUpdated(uint price);
-    event FeesHarvested(uint fees);
-    event Frozen();
+    event FeesHarvested(uint fees);    
 
     uint constant internal MAX_INT = 2**256 - 1;
     
