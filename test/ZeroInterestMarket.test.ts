@@ -513,9 +513,18 @@ describe("ZeroInterestMarket", () => {
                
                 expect(collateralToken.transfer).to.be.calledWith(other.address, collateralLiquidated);
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, DEBT_AMOUNT);
-            });
+            });          
+            
         });
-
+        describe("Frozen market - bad oracle price", () => {
+        it.only("no good oracle price", async () => {                      
+            oracle.fetchPrice.returns([false, `0`]);
+            await expect(market.connect(liquidator).liquidate(borrower.address, `5${E18}`, liquidator.address, ethers.constants.AddressZero)).
+            to.be.revertedWith("Market: frozen");
+             
+            expect(await market.frozen()).to.equal(true);
+        }); 
+    });    
         describe("harvestFees", () => {
             it("transfers fees to the treasury", async () => {
                 collateralToken.transferFrom.returns(true);

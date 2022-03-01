@@ -27,6 +27,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event OracleUpdated(address oracle);
     event LastPriceUpdated(uint price);
     event FeesHarvested(uint fees);
+    event Frozen();
 
     uint constant internal MAX_INT = 2**256 - 1;
 
@@ -51,6 +52,8 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     mapping(address => uint) public userDebt;
     uint public totalCollateral;
     uint public totalDebt;
+
+    bool public frozen;
  
     function initialize(
         address _owner,
@@ -81,6 +84,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function deposit(address _to, uint _amount) public override {
+        require(!frozen, "Market: frozen");
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
@@ -95,8 +99,11 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function withdraw(address _to, uint _amount) public override {
-        require(_amount <= userCollateral[msg.sender], "Market: amount too large");
+        require(_amount <= userCollateral[msg.sender], "Market: amount too large");    
+
         _updatePrice();
+
+        require(!frozen, "Market: frozen");
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
         totalCollateral = totalCollateral - _amount;
@@ -114,6 +121,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of debt to incur
      */
     function borrow(address _to, uint _amount) public override {
+        require(!frozen, "Market: frozen");
         _updatePrice();
 
         uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
@@ -172,10 +180,11 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
     function liquidate(address _user, uint _maxAmount, address _to, IFlashSwap _swapper) external override {
-        require(msg.sender != _user, "Market: cannot liquidate self");
+        require(msg.sender != _user, "Market: cannot liquidate self");        
 
         uint price = _updatePrice();
 
+        require(!frozen, "Market: frozen");
         require(!isUserSolvent(_user), "Market: user solvent");
 
         uint userCollValue = (userCollateral[_user] * price) /  LAST_PRICE_PRECISION;
@@ -233,7 +242,13 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
+            if (frozen) {
+                frozen = false;
+            }
             emit LastPriceUpdated(price);
+        } else {
+            frozen = true;
+            emit Frozen();
         }
         return lastPrice;
     }
