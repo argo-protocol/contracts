@@ -53,6 +53,6 @@ contract MainnetgOHMOracle is IOracle {
             return (false, 0);
         }
 
-         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / 1e9));
+         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / GOHM_PRECISION));
     }
 }
