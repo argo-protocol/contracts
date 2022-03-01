@@ -15,6 +15,10 @@ chai.use(smock.matchers);
 
 const E18 = '000000000000000000'; // 18 zeros
 
+const increaseTime = async (timeJumpSeconds: number) => {
+    await ethers.provider.send("evm_increaseTime", [timeJumpSeconds]);
+};
+  
 describe("ZeroInterestMarket", () => {
     let owner: SignerWithAddress;
     let borrower: SignerWithAddress;
@@ -51,6 +55,8 @@ describe("ZeroInterestMarket", () => {
             it("deposits collateral for user", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+                oracle.fetchPrice.returns([true, `10${E18}`]);
+
                 await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, AMOUNT);
 
@@ -60,6 +66,8 @@ describe("ZeroInterestMarket", () => {
             it("updates bookkeeping", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+                oracle.fetchPrice.returns([true, `10${E18}`]);
+
                 await market.connect(borrower).deposit(borrower.address, AMOUNT);
 
                 expect(await market.totalCollateral()).to.equal(AMOUNT);
@@ -69,6 +77,8 @@ describe("ZeroInterestMarket", () => {
             it("depositor emits event", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+                oracle.fetchPrice.returns([true, `10${E18}`]);
+
                 await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, AMOUNT);
             });
@@ -76,6 +86,7 @@ describe("ZeroInterestMarket", () => {
             it("can deposit collateral to another user", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+                oracle.fetchPrice.returns([true, `10${E18}`]);
 
                 await expect(market.connect(borrower).deposit(other.address, AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, other.address, AMOUNT);
@@ -334,6 +345,34 @@ describe("ZeroInterestMarket", () => {
             })
         });
 
+        describe("repayAndWithdraw - bad oracle", () => {
+            it("test with bad oracle", async () => {
+                collateralToken.transferFrom.returns(true);
+                collateralToken.transfer.returns(true);
+                debtToken.transferFrom.returns(true);
+                debtToken.transfer.returns(true);
+                oracle.fetchPrice.returns([true, `100${E18}`]);
+                
+                await expect(market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`)).
+                    to.emit(market, "Deposit").withArgs(borrower.address, borrower.address,`10${E18}`).
+                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address, `300${E18}`);
+                
+                // Mock a bad oracle
+                oracle.fetchPrice.returns([false, `0`]);
+                increaseTime(3601);
+
+                // Ensure repay + withdraw is frozen
+                await expect(market.connect(borrower).repayAndWithdraw(`304500000000000000000`, `10${E18}`)).
+                    to.be.revertedWith("Market: frozen");
+                
+                // Ensure repay works
+                await expect(market.connect(borrower).repay(borrower.address, `304500000000000000000`)).
+                    to.emit(market, "Repay").withArgs(borrower.address, borrower.address, `304500000000000000000`);
+
+                expect(await market.userDebt(borrower.address)).to.equal(0);
+            })
+        });
+
         describe("liquidate", () => {
             beforeEach(async () => {
                 // user has deposited $1000 worth of collateral
@@ -517,12 +556,20 @@ describe("ZeroInterestMarket", () => {
             
         });
         describe("Frozen market - bad oracle price", () => {
-        it.only("no good oracle price", async () => {                      
+            it("no good oracle price", async () => {                  
+            const AMOUNT = 100000;       
             oracle.fetchPrice.returns([false, `0`]);
-            await expect(market.connect(liquidator).liquidate(borrower.address, `5${E18}`, liquidator.address, ethers.constants.AddressZero)).
+            await expect(market.connect(liquidator).liquidate(borrower.address, AMOUNT, liquidator.address, ethers.constants.AddressZero)).
             to.be.revertedWith("Market: frozen");
-             
-            expect(await market.frozen()).to.equal(true);
+                             
+            await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
+            to.be.revertedWith("Market: frozen");
+
+            await expect(market.connect(borrower).depositAndBorrow(AMOUNT, AMOUNT)).
+            to.be.revertedWith("Market: frozen");
+
+            await expect(market.connect(borrower).borrow(borrower.address, AMOUNT)).
+            to.be.revertedWith("Market: frozen");            
         }); 
     });    
         describe("harvestFees", () => {

@@ -30,6 +30,10 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event Frozen();
 
     uint constant internal MAX_INT = 2**256 - 1;
+    
+    // Maximum time period allowed since Chainlink's latest round data timestamp, beyond which Chainlink is considered frozen.
+    uint constant public ORACLE_MAX_TIMEOUT = 1 hours;
+    
 
     address public treasury;
     IERC20 public collateralToken;
@@ -37,6 +41,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
 
     IOracle public oracle;
     uint public lastPrice;
+    uint public lastPriceTime;
     uint constant public LAST_PRICE_PRECISION = 1e18;
 
     uint public feesCollected;
@@ -52,8 +57,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     mapping(address => uint) public userDebt;
     uint public totalCollateral;
     uint public totalDebt;
-
-    bool public frozen;
  
     function initialize(
         address _owner,
@@ -84,7 +87,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function deposit(address _to, uint _amount) public override {
-        require(!frozen, "Market: frozen");
+        _updatePrice(true);
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
@@ -101,9 +104,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function withdraw(address _to, uint _amount) public override {
         require(_amount <= userCollateral[msg.sender], "Market: amount too large");    
 
-        _updatePrice();
-
-        require(!frozen, "Market: frozen");
+        _updatePrice(true);
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
         totalCollateral = totalCollateral - _amount;
@@ -121,8 +122,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of debt to incur
      */
     function borrow(address _to, uint _amount) public override {
-        require(!frozen, "Market: frozen");
-        _updatePrice();
+        _updatePrice(true);
 
         uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
         totalDebt = totalDebt + _amount + borrowRateFee;
@@ -147,7 +147,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
 
         debtToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-         emit Repay(msg.sender, _to, _amount);
+        emit Repay(msg.sender, _to, _amount);
     }
 
     /**
@@ -182,9 +182,8 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function liquidate(address _user, uint _maxAmount, address _to, IFlashSwap _swapper) external override {
         require(msg.sender != _user, "Market: cannot liquidate self");        
 
-        uint price = _updatePrice();
+        uint price = _updatePrice(true);
 
-        require(!frozen, "Market: frozen");
         require(!isUserSolvent(_user), "Market: user solvent");
 
         uint userCollValue = (userCollateral[_user] * price) /  LAST_PRICE_PRECISION;
@@ -230,25 +229,26 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         debtToken.safeTransfer(treasury, fees);
     }
 
+    function checkPriceFrozen() view private {
+        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen");  
+    }
+
     /**
      * @notice updates the current price of the collateral and saves it in `lastPrice`.
      * @return the price
      */
     function updatePrice() external override returns (uint) {
-        return _updatePrice();
+        return _updatePrice(false);
     }
 
-    function _updatePrice() internal returns (uint) {
+    function _updatePrice(bool _onFailCheckPriceFrozen) internal returns (uint) {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
-            if (frozen) {
-                frozen = false;
-            }
+            lastPriceTime = block.timestamp;
             emit LastPriceUpdated(price);
-        } else {
-            frozen = true;
-            emit Frozen();
+        } else if (_onFailCheckPriceFrozen){
+            checkPriceFrozen();
         }
         return lastPrice;
     }
