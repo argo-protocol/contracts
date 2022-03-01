@@ -87,7 +87,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function deposit(address _to, uint _amount) public override {
-        _updatePrice(true);
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
@@ -180,7 +179,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
     function liquidate(address _user, uint _maxAmount, address _to, IFlashSwap _swapper) external override {
-        require(msg.sender != _user, "Market: cannot liquidate self");        
+        require(msg.sender != _user, "Market: cannot liquidate self");
 
         uint price = _updatePrice(true);
 
