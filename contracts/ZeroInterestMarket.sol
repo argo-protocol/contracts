@@ -229,8 +229,8 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         debtToken.safeTransfer(treasury, fees);
     }
 
-    function checkPriceFrozen() view private {
-        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen");  
+    function checkPriceFrozen() private view {
+        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen");  // solhint-disable not-rely-on-time
     }
 
     /**
