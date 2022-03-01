@@ -104,7 +104,7 @@ describe("PegStability", () => {
                 await psm.connect(other).buy(AMOUNT);
 
                 expect(reserveToken.transferFrom).to.be.calledWith(other.address, psm.address, `10025${E18}`);
-                expect(await psm.feesCollected()).to.equal(`25${E18}`);
+                expect(await psm.buyFeesCollected()).to.equal(`25${E18}`);
             });
 
             it("emits a ReserveBought event", async () => {
@@ -120,12 +120,15 @@ describe("PegStability", () => {
 
             it("reverts if debt token balance is less than amount and fees previously collected", async () => {
                 debtToken.transfer.returns(true);
+                debtToken.transferFrom.returns(true);
                 debtToken.balanceOf.returns(`10000${E18}`);
                 reserveToken.transferFrom.returns(true);
+                reserveToken.transfer.returns(true);
+                reserveToken.balanceOf.returns(`10000${E18}`);
 
                 const AMOUNT = `10000${E18}`;
-                await psm.connect(other).buy(AMOUNT);
-                expect(await psm.feesCollected()).to.equal(`25${E18}`);
+                await psm.connect(other).sell(AMOUNT);
+                expect(await psm.sellFeesCollected()).to.equal(`45${E18}`);
 
                 await expect(psm.connect(other).buy(AMOUNT)).
                     to.be.revertedWith("insufficient balance")
@@ -147,6 +150,7 @@ describe("PegStability", () => {
             it("transfers reserve tokens to msg.sender", async () => {
                 debtToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
+                reserveToken.balanceOf.returns(`100000${E18}`);
 
                 const AMOUNT = `50000${E18}`;
 
@@ -158,23 +162,36 @@ describe("PegStability", () => {
             it("transfers debt tokens plus fees from msg.sender", async () => {
                 debtToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
+                reserveToken.balanceOf.returns(`100000${E18}`);
 
                 const AMOUNT = `50000${E18}`;
 
                 await psm.connect(other).sell(AMOUNT);
 
                 expect(debtToken.transferFrom).to.be.calledWith(other.address, psm.address, `50225${E18}`)
-                expect(await psm.feesCollected()).to.equal(`225${E18}`);
+                expect(await psm.sellFeesCollected()).to.equal(`225${E18}`);
             });
 
             it("emits a reserves sold event", async () => {
                 debtToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
+                reserveToken.balanceOf.returns(`100000${E18}`);
 
                 const AMOUNT = `50000${E18}`;
 
                 await expect(psm.connect(other).sell(AMOUNT)).
                     to.emit(psm, "ReservesSold").withArgs(AMOUNT);
+            });
+
+            it("reverts if reserve token balance is less than amount", async () => {
+                debtToken.transfer.returns(true);
+                reserveToken.transferFrom.returns(true);
+                reserveToken.balanceOf.returns(`100${E18}`);
+
+                const AMOUNT = `10000${E18}`;
+
+                await expect(psm.connect(other).buy(AMOUNT)).
+                    to.be.revertedWith("insufficient balance")
             });
         });
 
@@ -262,21 +279,30 @@ describe("PegStability", () => {
 
         describe("harvestFees", () => {
             it("transfers fees to the treasury", async () => {
+                debtToken.balanceOf.returns(`100000${E18}`);
                 debtToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
+                reserveToken.balanceOf.returns(`100000${E18}`);
+                reserveToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
 
                 const AMOUNT = `50000${E18}`;
-                const FEES = `225${E18}`;
+                const SELL_FEES = `225${E18}`; // 0.45%
+                const BUY_FEES = `125${E18}`; // 0.25%
 
                 await psm.connect(other).sell(AMOUNT);
+                await psm.connect(other).buy(AMOUNT);
                 
-                expect(await psm.feesCollected()).to.equal(FEES);
+                expect(await psm.buyFeesCollected()).to.equal(BUY_FEES);
+                expect(await psm.sellFeesCollected()).to.equal(SELL_FEES);
 
-                await psm.harvestFees();
+                await expect(psm.harvestFees()).
+                    to.emit(psm, "FeesHarvested").withArgs(`350${E18}`);
 
-                expect(await psm.feesCollected()).to.equal(0);
-                expect(debtToken.transfer).to.be.calledWith(treasury.address, FEES);
+                expect(await psm.buyFeesCollected()).to.equal(0);
+                expect(await psm.sellFeesCollected()).to.equal(0);
+                expect(debtToken.transfer).to.be.calledWith(treasury.address, SELL_FEES);
+                expect(reserveToken.transfer).to.be.calledWith(treasury.address, BUY_FEES);
             });
         });
 

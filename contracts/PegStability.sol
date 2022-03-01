@@ -28,7 +28,8 @@ contract PegStability is Ownable, IPSM {
     uint256 public override sellFee;
     uint256 constant public override FEE_PRECISION = 1e5;
 
-    uint256 public feesCollected;
+    uint256 public buyFeesCollected; // in reserve tokens
+    uint256 public sellFeesCollected; // in debt tokens
     address public treasury;
 
     constructor(
@@ -52,17 +53,17 @@ contract PegStability is Ownable, IPSM {
     }
 
     /**
-     * @notice sells _amount of debt token for reserveToken.
+     * @notice buys _amount of reserveToken for debtToken.
      * Will transfer _amount + buy fees of reserveToken from msg.sender
      * requires approval
-     * @param _amount the amount of debt token to buy
+     * @param _amount the amount of reserve token to buy
      */
     function buy(uint256 _amount) external override {
         // ensure we can still withdraw fees
-        require(_amount + feesCollected <= debtToken.balanceOf(address(this)), "insufficient balance");
+        require(_amount + sellFeesCollected <= debtToken.balanceOf(address(this)), "insufficient balance");
 
         uint256 fees = (_amount * buyFee) / FEE_PRECISION;
-        feesCollected = feesCollected + fees;
+        buyFeesCollected += fees;
 
         emit ReservesBought(_amount);
 
@@ -71,14 +72,16 @@ contract PegStability is Ownable, IPSM {
     }
 
     /**
-     * @notice sells _amount of reserve token in exchange for debt token.
+     * @notice sells _amount of reserveToken in exchange for debtToken.
      * Will transfer _amount + sell fees of debtToken from msg.sender
      * requires approval
-     * @param _amount the amount of debt token to sell
+     * @param _amount the amount of reserve token to sell
      */
     function sell(uint256 _amount) external override {
+        require(_amount + buyFeesCollected <= reserveToken.balanceOf(address(this)), "insufficient balance");
+
         uint256 fees = (_amount * sellFee) / FEE_PRECISION;
-        feesCollected = feesCollected + fees;
+        sellFeesCollected += fees;
 
         emit ReservesSold(_amount);
 
@@ -130,11 +133,14 @@ contract PegStability is Ownable, IPSM {
      * @notice Harvests fees collected to the treasury
      */
     function harvestFees() external {
-        uint fees = feesCollected;
-        feesCollected = 0;
-        emit FeesHarvested(fees);
+        uint debtTokenHarvest = sellFeesCollected;
+        uint reserveTokenHarvest = buyFeesCollected;
+        sellFeesCollected = 0;
+        buyFeesCollected = 0;
+        emit FeesHarvested(debtTokenHarvest + reserveTokenHarvest);
 
-        debtToken.safeTransfer(treasury, fees);
+        debtToken.safeTransfer(treasury, debtTokenHarvest);
+        reserveToken.safeTransfer(treasury, reserveTokenHarvest);
     }
 
     /**
