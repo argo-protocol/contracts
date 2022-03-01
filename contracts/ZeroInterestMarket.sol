@@ -166,12 +166,14 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @notice Liquidate `_maxAmount` of a user's collateral who's loan-to-value ratio exceeds limit.
      * Debt tokens provided by `msg.sender` and liquidated collateral sent to `_to`.
      * Reverts if user is solvent.
+     * Reverts if collateral received is less than _minCollateral
      * @param _user the account to liquidate
      * @param _maxAmount the maximum amount of debt the liquidator is willing to repay
+     * @param _minCollateral the minimum amount of collateral the liquidator is willing to accept
      * @param _to the address that will receive the liquidated collateral
      * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
-    function liquidate(address _user, uint _maxAmount, address _to, IFlashSwap _swapper) external override {
+    function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap _swapper) external override {
         require(msg.sender != _user, "Market: cannot liquidate self");
 
         uint price = _updatePrice();
@@ -192,6 +194,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
             // collateral is worth more than debt, liquidator purchases "repayAmount"
             liquidatedCollateral = (repayAmount * LAST_PRICE_PRECISION) / discountedCollateralValue;
         }
+        require(liquidatedCollateral >= _minCollateral, "excess collateral slippage");
 
         // bookkeeping
         userCollateral[_user] = userCollateral[_user] - liquidatedCollateral;

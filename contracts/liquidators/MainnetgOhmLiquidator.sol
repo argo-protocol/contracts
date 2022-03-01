@@ -64,7 +64,7 @@ contract MainnetgOhmLiquidatorV1 is IFlashSwap {
     ) public {
         tmpDesiredProfit = _desiredProfit;
         tmpRecipient = _to;
-        market.liquidate(_user, _maxAmount, address(this), this);
+        market.liquidate(_user, _maxAmount, 0, address(this), this);
         tmpDesiredProfit = 0;
         tmpRecipient = address(0);
     }
