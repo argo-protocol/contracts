@@ -24,7 +24,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event Repay(address indexed from, address indexed to, uint256 amount);
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
     event TreasuryUpdated(address newTreasury);
-    event OracleUpdated(address oracle);
     event LastPriceUpdated(uint price);
     event FeesHarvested(uint fees);
 
@@ -72,7 +71,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         Ownable._transferOwnership(_owner);
 
         emit TreasuryUpdated(_treasury);
-        emit OracleUpdated(_oracle);
     }
 
     /**
@@ -254,16 +252,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         require(_treasury != address(0), "Market: 0x0 treasury address");
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
-    }
-
-    /**
-     * @notice updates the price oracle
-     * @param _oracle the new oracle
-     */
-    function setOracle(address _oracle) external onlyOwner {
-        require(_oracle != address(0), "Market: 0x0 oracle address");
-        oracle = IOracle(_oracle);
-        emit OracleUpdated(_oracle);
     }
 
     /**
