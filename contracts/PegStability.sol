@@ -116,6 +116,7 @@ contract PegStability is Ownable, IPSM {
      * @param _buyFee the new buy fee
      */
     function setBuyFee(uint256 _buyFee) external onlyOwner {
+        require(_buyFee < FEE_PRECISION, "fee too high");
         buyFee = _buyFee;
         emit BuyFeeUpdated(_buyFee);
     }
@@ -125,6 +126,7 @@ contract PegStability is Ownable, IPSM {
      * @param _sellFee the new sell fee
      */
     function setSellFee(uint256 _sellFee) external onlyOwner {
+        require(_sellFee < FEE_PRECISION, "fee too high");
         sellFee = _sellFee;
         emit SellFeeUpdated(_sellFee);
     }
