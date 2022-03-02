@@ -27,8 +27,6 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event LastPriceUpdated(uint price);
     event FeesHarvested(uint fees);
 
-    uint constant internal MAX_INT = 2**256 - 1;
-
     address public treasury;
     IERC20 public collateralToken;
     IDebtToken public debtToken;
@@ -274,7 +272,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     //////
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
-        if (userCollateral[_user] == 0) return MAX_INT;
+        if (userCollateral[_user] == 0) return type(uint256).max;
         return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
     }
 
