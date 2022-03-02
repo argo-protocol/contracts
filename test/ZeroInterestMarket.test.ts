@@ -587,7 +587,7 @@ describe("ZeroInterestMarket", () => {
             it("no good oracle price", async () => {                  
             const AMOUNT = 100000;       
             oracle.fetchPrice.returns([false, `0`]);
-            await expect(market.connect(liquidator).liquidate(borrower.address, AMOUNT, liquidator.address, ethers.constants.AddressZero)).
+            await expect(market.connect(liquidator).liquidate(borrower.address, AMOUNT, 0, liquidator.address, ethers.constants.AddressZero)).
             to.be.revertedWith("Market: frozen");                            
 
             await expect(market.connect(borrower).borrow(borrower.address, AMOUNT)).
