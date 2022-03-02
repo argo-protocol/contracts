@@ -9,11 +9,12 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
  * A lending market that only supports a flat borrow fee and no interest rate
  */
-contract ZeroInterestMarket is Ownable, Initializable, IMarket {
+contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IDebtToken;
 
@@ -83,7 +84,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _to the account that receives the collateral
      * @param _amount the amount of collateral tokens
      */
-    function deposit(address _to, uint _amount) public override {
+    function deposit(address _to, uint _amount) public override whenNotPaused{
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
@@ -97,7 +98,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _to the account that receives the collateral
      * @param _amount the amount of collateral tokens
      */
-    function withdraw(address _to, uint _amount) public override {
+    function withdraw(address _to, uint _amount) public override whenNotPaused {
         require(_amount <= userCollateral[msg.sender], "Market: amount too large");    
 
         _updatePrice(true);
@@ -117,7 +118,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _to the reciever of the debt tokens
      * @param _amount the amount of debt to incur
      */
-    function borrow(address _to, uint _amount) public override {
+    function borrow(address _to, uint _amount) public override whenNotPaused {
         _updatePrice(true);
 
         uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
@@ -136,7 +137,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _to the user's account to repay
      * @param _amount the amount of tokens to repay
      */
-    function repay(address _to, uint _amount) public override {
+    function repay(address _to, uint _amount) public override whenNotPaused {
         require(_amount <= userDebt[_to], "Market: repay exceeds debt");
         totalDebt = totalDebt - _amount;
         userDebt[_to] = userDebt[_to] - _amount;
@@ -177,7 +178,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _to the address that will receive the liquidated collateral
      * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
-    function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap _swapper) external override {
+    function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap _swapper) external override whenNotPaused{
         require(msg.sender != _user, "Market: cannot liquidate self");
 
         uint price = _updatePrice(true);
@@ -220,7 +221,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     /**
      * @notice Harvests fees collected to the treasury
      */
-    function harvestFees() external {
+    function harvestFees() external whenNotPaused {
         uint fees = feesCollected;
         feesCollected = 0;
         emit FeesHarvested(fees);
@@ -268,6 +269,18 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         require(_treasury != address(0), "Market: 0x0 treasury address");
         treasury = _treasury;
         emit TreasuryUpdated(_treasury);
+    }
+
+    /**
+     * @notice Emergency shutdown of the market
+     * @param _paused if true, shutdown the market.  if false, resume normal operations.
+     */
+    function setPaused(bool _paused) external onlyOwner {
+        if (_paused) {
+           _pause();
+        } else {
+           _unpause();
+        }
     }
 
     /**

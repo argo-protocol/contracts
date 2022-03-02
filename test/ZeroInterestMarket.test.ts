@@ -647,6 +647,43 @@ describe("ZeroInterestMarket", () => {
             });
         });
 
+        describe.only("emergency pause", () => {
+            it("can pause", async () => {
+                expect(await market.paused()).to.equal(false);
+                await market.connect(owner).setPaused(true);
+                expect(await market.paused()).to.equal(true);
+            });
+
+            it("emits an event", async () => {
+                await expect(market.connect(owner).setPaused(true)).
+                    to.emit(market, "Paused").withArgs(owner.address);
+            });
+
+            it("can only be done by the owner", async () => {
+                await expect(market.connect(other).setPaused(true)).
+                    to.be.revertedWith("Ownable: caller is not the owner");
+            });
+
+            it("ensure critical functionality is paused", async () => {
+                await market.connect(owner).setPaused(true);
+
+                const AMOUNT = 100000;
+                collateralToken.transferFrom.returns(true);
+
+                await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
+                to.be.revertedWith("Pausable: paused");
+                await expect(market.connect(borrower).withdraw(borrower.address, AMOUNT)).
+                to.be.revertedWith("Pausable: paused");
+                await expect(market.connect(borrower).repay(borrower.address, AMOUNT)).
+                to.be.revertedWith("Pausable: paused");
+                await expect(market.connect(borrower).borrow(borrower.address, AMOUNT)).
+                to.be.revertedWith("Pausable: paused");
+                await expect(market.connect(liquidator).liquidate(borrower.address, AMOUNT, 0, liquidator.address, ethers.constants.AddressZero)).
+                to.be.revertedWith("Pausable: paused");
+               
+            });
+        });
+
         describe("recoverERC20", () => {
             it("transfer random ERC20 tokens to the owner", async () => {
                 let token = await smock.fake<IERC20>("IERC20");
