@@ -12,7 +12,7 @@ interface IMarket {
     function depositAndBorrow(uint _collateralAmount, uint _debtAmount) external;
     function repayAndWithdraw(uint _debtAmount, uint _collateralAmount) external;
 
-    function liquidate(address _user, uint _amount, address _to, IFlashSwap swapper) external;
+    function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap swapper) external;
     function updatePrice() external returns (uint);
 
     function getUserLTV(address _user) external view returns(uint);
