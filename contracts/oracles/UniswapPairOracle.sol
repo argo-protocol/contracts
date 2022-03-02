@@ -36,7 +36,7 @@ contract UniswapPairOracle is Ownable {
         address tokenA,
         address tokenB,
         address _owner    
-    ) public{        
+    ) {        
         IUniswapV2Pair _pair = IUniswapV2Pair(UniswapV2Library.pairFor(factory, tokenA, tokenB));
         pair = _pair;
         token0 = _pair.token0();

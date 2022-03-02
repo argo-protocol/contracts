@@ -31,8 +31,8 @@ interface IwstETH {
 contract MainnetwstETH is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IwstETH private wstETH;        
-    AggregatorV3Interface private stEthUSDFeed;
+    IwstETH private immutable wstETH;        
+    AggregatorV3Interface private immutable stEthUSDFeed;
 
     constructor(
         address _wstETH,

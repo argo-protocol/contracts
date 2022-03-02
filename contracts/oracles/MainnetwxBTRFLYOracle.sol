@@ -31,11 +31,11 @@ interface IwxBTRFLY {
 contract MainnetwxBTRFLYOracle is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IwxBTRFLY private wxBTRFLY;
-    address private btrfly;
-    UniswapPairOracle private uniswapPairOracle;
-    AggregatorV3Interface private ohmEthFeed;
-    AggregatorV3Interface private ethUsdFeed;
+    IwxBTRFLY private immutable wxBTRFLY;
+    address private immutable btrfly;
+    UniswapPairOracle private immutable uniswapPairOracle;
+    AggregatorV3Interface private immutable ohmEthFeed;
+    AggregatorV3Interface private immutable ethUsdFeed;
 
     constructor(
         address _wxBTRFLY,

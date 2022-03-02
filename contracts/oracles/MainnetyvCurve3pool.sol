@@ -20,11 +20,11 @@ interface ICurvePool {
 contract MainnetyvCurve3pool is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IYearnVault private yvcurve3pool;
-    ICurvePool private threeCrv;
-    AggregatorV3Interface private dai;
-    AggregatorV3Interface private usdc;
-    AggregatorV3Interface private usdt;
+    IYearnVault private immutable yvcurve3pool;
+    ICurvePool private immutable threeCrv;
+    AggregatorV3Interface private immutable dai;
+    AggregatorV3Interface private immutable usdc;
+    AggregatorV3Interface private immutable usdt;
 
     constructor(
         address _yvcurve3pool,
