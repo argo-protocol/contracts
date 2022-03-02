@@ -647,7 +647,7 @@ describe("ZeroInterestMarket", () => {
             });
         });
 
-        describe.only("emergency pause", () => {
+        describe("emergency pause", () => {
             it("can pause", async () => {
                 expect(await market.paused()).to.equal(false);
                 await market.connect(owner).setPaused(true);
