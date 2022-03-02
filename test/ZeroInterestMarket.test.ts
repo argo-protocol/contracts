@@ -15,6 +15,10 @@ chai.use(smock.matchers);
 
 const E18 = '000000000000000000'; // 18 zeros
 
+const increaseTime = async (timeJumpSeconds: number) => {
+    await ethers.provider.send("evm_increaseTime", [timeJumpSeconds]);
+};
+  
 describe("ZeroInterestMarket", () => {
     let owner: SignerWithAddress;
     let borrower: SignerWithAddress;
@@ -51,6 +55,7 @@ describe("ZeroInterestMarket", () => {
             it("deposits collateral for user", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+
                 await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, AMOUNT);
 
@@ -69,6 +74,7 @@ describe("ZeroInterestMarket", () => {
             it("depositor emits event", async () => {
                 const AMOUNT = 100000;
                 collateralToken.transferFrom.returns(true);
+
                 await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, AMOUNT);
             });
@@ -83,6 +89,17 @@ describe("ZeroInterestMarket", () => {
                 expect(collateralToken.transferFrom).to.be.calledWith(borrower.address, market.address, AMOUNT);
                 expect(await market.totalCollateral()).to.equal(AMOUNT);
                 expect(await market.userCollateral(other.address)).to.equal(AMOUNT);
+            });
+
+            it("deposits collateral for user, even with bad oracle", async () => {
+                const AMOUNT = 100000;
+                collateralToken.transferFrom.returns(true);
+                oracle.fetchPrice.returns([false, `0`]);
+
+                await expect(market.connect(borrower).deposit(borrower.address, AMOUNT)).
+                    to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, AMOUNT);
+
+                expect(collateralToken.transferFrom).to.be.calledWith(borrower.address, market.address, AMOUNT);
             });
         });
 
@@ -334,6 +351,34 @@ describe("ZeroInterestMarket", () => {
             })
         });
 
+        describe("repayAndWithdraw - bad oracle", () => {
+            it("test with bad oracle", async () => {
+                collateralToken.transferFrom.returns(true);
+                collateralToken.transfer.returns(true);
+                debtToken.transferFrom.returns(true);
+                debtToken.transfer.returns(true);
+                oracle.fetchPrice.returns([true, `100${E18}`]);
+                
+                await expect(market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`)).
+                    to.emit(market, "Deposit").withArgs(borrower.address, borrower.address,`10${E18}`).
+                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address, `300${E18}`);
+                
+                // Mock a bad oracle
+                oracle.fetchPrice.returns([false, `0`]);
+                increaseTime(3601);
+
+                // Ensure repay + withdraw is frozen
+                await expect(market.connect(borrower).repayAndWithdraw(`304500000000000000000`, `10${E18}`)).
+                    to.be.revertedWith("Market: frozen");
+                
+                // Ensure repay works
+                await expect(market.connect(borrower).repay(borrower.address, `304500000000000000000`)).
+                    to.emit(market, "Repay").withArgs(borrower.address, borrower.address, `304500000000000000000`);
+
+                expect(await market.userDebt(borrower.address)).to.equal(0);
+            })
+        });
+
         describe("liquidate", () => {
             beforeEach(async () => {
                 // user has deposited $1000 worth of collateral
@@ -365,7 +410,7 @@ describe("ZeroInterestMarket", () => {
                 // $507.50 worth of collateral at $72 is 7.0486
                 const collateralLiquidated = `704861111111111111`;
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero)).
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, 0, liquidator.address, ethers.constants.AddressZero)).
                     to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
@@ -390,7 +435,7 @@ describe("ZeroInterestMarket", () => {
                 // $507.50 worth of collateral at $72 is 7.0486
                 const collateralLiquidated = `704861111111111111`;
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, swapper.address)).
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, collateralLiquidated, liquidator.address, swapper.address)).
                     to.emit(market, "Liquidate").withArgs(borrower.address, liquidator.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, liquidator.address, collateralLiquidated);
@@ -413,7 +458,7 @@ describe("ZeroInterestMarket", () => {
 
                 // liquidate $100 of debt
                 const REPAY_AMOUNT = `100${E18}`;
-                await market.connect(liquidator).liquidate(borrower.address, REPAY_AMOUNT, liquidator.address, ethers.constants.AddressZero);
+                await market.connect(liquidator).liquidate(borrower.address, REPAY_AMOUNT, 0, liquidator.address, ethers.constants.AddressZero);
 
                 // liquidation penalty 10%, so price collateral at $72
                 // $100 worth of an $72 token is 1.38888
@@ -429,7 +474,7 @@ describe("ZeroInterestMarket", () => {
                 // LTV at 50.75%, all good
                 expect(await market.getUserLTV(borrower.address)).to.equal("50750");
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero))
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, 0, liquidator.address, ethers.constants.AddressZero))
                     .to.be.revertedWith("Market: user solvent");
             });
 
@@ -449,7 +494,7 @@ describe("ZeroInterestMarket", () => {
                 expect(await market.getUserLTV(borrower.address)).to.equal("5075000");
 
                 // at this point, this user owes $507.50, but only has $10 worth of collateral
-                await market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, liquidator.address, ethers.constants.AddressZero);
+                await market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, 0, liquidator.address, ethers.constants.AddressZero);
 
                 // 10% liquidation penallty, so buy the collateral at $0.90
                 // 10 tokens of collateral @ $0.90 is $9
@@ -477,7 +522,7 @@ describe("ZeroInterestMarket", () => {
 
                 // at this point, this user owes $507.50, but only has $10 worth of collateral
                 // liquidator buys $5 of it
-                await market.connect(liquidator).liquidate(borrower.address, `5${E18}`, liquidator.address, ethers.constants.AddressZero);
+                await market.connect(liquidator).liquidate(borrower.address, `5${E18}`, 0, liquidator.address, ethers.constants.AddressZero);
 
                 // 10% liquidation penallty, so buy the collateral at $0.90
                 // $5 with of $0.90 tokens is 5.555555
@@ -485,8 +530,30 @@ describe("ZeroInterestMarket", () => {
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, `5${E18}`);
             });
 
+            it("allows liquidator to revert if they don't get as much collateral as they expect", async () => {
+                const DEBT_AMOUNT = "507500000000000000000"; // $507.50
+                await market.connect(borrower).borrow(borrower.address, `500${E18}`);
+                expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
+
+                // LTV at 50.75%, all good
+                expect(await market.getUserLTV(borrower.address)).to.equal("50750");
+
+                oracle.fetchPrice.returns([true, `80${E18}`]);
+                await market.updatePrice();
+                
+                // LTV at 63%, ruh roh
+                expect(await market.getUserLTV(borrower.address)).to.equal("63437");
+                
+                // liquidation penalty 10%, so price collateral at $72
+                // $507.50 worth of collateral at $72 is 7.0486
+                const collateralLiquidated = `704861111111111112`;
+
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, collateralLiquidated, liquidator.address, swapper.address)).
+                    be.revertedWith("excess collateral slippage")
+            });
+
             it("cannot liquidate themself", async () => {
-                await expect(market.connect(liquidator).liquidate(liquidator.address, 1, liquidator.address, ethers.constants.AddressZero)).
+                await expect(market.connect(liquidator).liquidate(liquidator.address, 1, 0, liquidator.address, ethers.constants.AddressZero)).
                     to.be.revertedWith("Market: cannot liquidate self");
             });
 
@@ -506,16 +573,27 @@ describe("ZeroInterestMarket", () => {
                 // $507.50 worth of collateral at $72 is 7.0486
                 const collateralLiquidated = `704861111111111111`;
 
-                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, other.address, ethers.constants.AddressZero)).
+                await expect(market.connect(liquidator).liquidate(borrower.address, DEBT_AMOUNT, 0, other.address, ethers.constants.AddressZero)).
                     to.emit(market, "Liquidate").withArgs(borrower.address, other.address, DEBT_AMOUNT, collateralLiquidated, PRICE).
                     and.emit(market, "Repay").withArgs(liquidator.address, borrower.address, DEBT_AMOUNT).
                     and.emit(market, "Withdraw").withArgs(borrower.address, other.address, collateralLiquidated);
                
                 expect(collateralToken.transfer).to.be.calledWith(other.address, collateralLiquidated);
                 expect(debtToken.transferFrom).to.be.calledWith(liquidator.address, market.address, DEBT_AMOUNT);
-            });
+            });          
+            
         });
+        describe("Frozen market - bad oracle price", () => {
+            it("no good oracle price", async () => {                  
+            const AMOUNT = 100000;       
+            oracle.fetchPrice.returns([false, `0`]);
+            await expect(market.connect(liquidator).liquidate(borrower.address, AMOUNT, 0, liquidator.address, ethers.constants.AddressZero)).
+            to.be.revertedWith("Market: frozen");                            
 
+            await expect(market.connect(borrower).borrow(borrower.address, AMOUNT)).
+            to.be.revertedWith("Market: frozen");            
+        }); 
+    });    
         describe("harvestFees", () => {
             it("transfers fees to the treasury", async () => {
                 collateralToken.transferFrom.returns(true);
@@ -566,29 +644,6 @@ describe("ZeroInterestMarket", () => {
             it("cannot be set to a zero address", async () => {
                 await expect(market.connect(owner).setTreasury(ethers.constants.AddressZero)).
                     to.be.revertedWith("Market: 0x0 treasury address");
-            });
-        });
-
-        describe("setOracle", () => {
-            it("can change the oracle address", async () => {
-                expect(await market.oracle()).to.equal(oracle.address);
-                await market.connect(owner).setOracle(other.address);
-                expect(await market.oracle()).to.equal(other.address);
-            });
-
-            it("emits an event", async () => {
-                await expect(market.connect(owner).setOracle(other.address)).
-                    to.emit(market, "OracleUpdated").withArgs(other.address);
-            });
-
-            it("can only be done by the owner", async () => {
-                await expect(market.connect(other).setOracle(other.address)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
-            });
-
-            it("cannot be set to a zero address", async () => {
-                await expect(market.connect(owner).setOracle(ethers.constants.AddressZero)).
-                    to.be.revertedWith("Market: 0x0 oracle address");
             });
         });
 

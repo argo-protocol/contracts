@@ -21,11 +21,14 @@ contract MarketFactory is Ownable {
 
     /**
      * @notice Create new MarketFactory with an owner
-     * @param _owner Owner of the factory and all markets
+     * @param owner_ Owner of the factory and all markets
      */
-    constructor(address _owner) {
+    constructor(address owner_) {
+        require(owner_ != address(0), "0x0 owner address");
+
         zeroInterestMarketImpl = new ZeroInterestMarket();
-        transferOwnership(_owner);
+        zeroInterestMarketImpl.initialize(address(0x0), address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
+        transferOwnership(owner_);
     }
 
     /**
@@ -47,6 +50,11 @@ contract MarketFactory is Ownable {
         uint256 _borrowRate,
         uint256 _liquidationPenalty
     ) public onlyOwner {
+        require(_treasury != address(0), "0x0 treasury address");
+        require(_collateralToken != address(0), "0x0 collateralToken address");
+        require(_debtToken != address(0), "0x0 debtToken address");
+        require(_oracle != address(0), "0x0 debtToken address");
+
         ZeroInterestMarket market = ZeroInterestMarket(Clones.clone(address(zeroInterestMarketImpl)));
         market.initialize(
             owner(),

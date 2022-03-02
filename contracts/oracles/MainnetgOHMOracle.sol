@@ -23,9 +23,9 @@ contract MainnetgOHMOracle is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
     uint256 private constant GOHM_PRECISION = 1e9;
-    IgOHM private gOHM;
-    AggregatorV3Interface private ohmEthFeed;
-    AggregatorV3Interface private ethUsdFeed;
+    IgOHM private immutable gOHM;
+    AggregatorV3Interface private immutable ohmEthFeed;
+    AggregatorV3Interface private immutable ethUsdFeed;
 
     constructor(
         address _gohm,
@@ -53,6 +53,6 @@ contract MainnetgOHMOracle is IOracle {
             return (false, 0);
         }
 
-         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / 1e9));
+         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / GOHM_PRECISION));
     }
 }
