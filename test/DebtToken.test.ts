@@ -18,8 +18,8 @@ describe("DebtToken", () => {
         it("sets the constants", async () => {
             const token = await (new DebtToken__factory(owner)).deploy(treasury.address);
 
-            expect(await token.name()).to.equal("SIN USD");
-            expect(await token.symbol()).to.equal("SIN");
+            expect(await token.name()).to.equal("Argo Stablecoin");
+            expect(await token.symbol()).to.equal("ARGO");
             expect(await token.decimals()).to.equal(18);
             expect(await token.totalSupply()).to.equal(0);
         });
