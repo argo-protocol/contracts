@@ -263,6 +263,11 @@ describe("PegStability", () => {
                 await expect(psm.connect(other).setBuyFee(1000)).
                     to.be.revertedWith("Ownable: caller is not the owner");
             })
+
+            it("will revert if set too high", async () => {
+                await expect(psm.connect(owner).setBuyFee(100000)).
+                    to.be.revertedWith("fee too high");
+            })
         });
 
         describe("setSellFee", () => {
@@ -274,6 +279,11 @@ describe("PegStability", () => {
             it("can only be done by the owner", async () => {
                 await expect(psm.connect(other).setSellFee(1000)).
                     to.be.revertedWith("Ownable: caller is not the owner");
+            })
+
+            it("will revert if set too high", async () => {
+                await expect(psm.connect(owner).setSellFee(100000)).
+                    to.be.revertedWith("fee too high");
             })
         });
 

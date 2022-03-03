@@ -25,14 +25,18 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
     event TreasuryUpdated(address newTreasury);
     event LastPriceUpdated(uint price);
-    event FeesHarvested(uint fees);
-
+    event FeesHarvested(uint fees);    
+    
+    // Maximum time period allowed since Chainlink's latest round data timestamp, beyond which Chainlink is considered frozen.
+    uint constant public ORACLE_MAX_TIMEOUT = 1 hours;
+    
     address public treasury;
     IERC20 public collateralToken;
     IDebtToken public debtToken;
 
     IOracle public oracle;
     uint public lastPrice;
+    uint public lastPriceTime;
     uint constant public LAST_PRICE_PRECISION = 1e18;
 
     uint public feesCollected;
@@ -91,8 +95,9 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of collateral tokens
      */
     function withdraw(address _to, uint _amount) public override {
-        require(_amount <= userCollateral[msg.sender], "Market: amount too large");
-        _updatePrice();
+        require(_amount <= userCollateral[msg.sender], "Market: amount too large");    
+
+        _updatePrice(true);
 
         userCollateral[msg.sender] = userCollateral[msg.sender] - _amount;
         totalCollateral = totalCollateral - _amount;
@@ -110,7 +115,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
      * @param _amount the amount of debt to incur
      */
     function borrow(address _to, uint _amount) public override {
-        _updatePrice();
+        _updatePrice(true);
 
         uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
         totalDebt = totalDebt + _amount + borrowRateFee;
@@ -135,7 +140,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
 
         debtToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-         emit Repay(msg.sender, _to, _amount);
+        emit Repay(msg.sender, _to, _amount);
     }
 
     /**
@@ -172,7 +177,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
     function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap _swapper) external override {
         require(msg.sender != _user, "Market: cannot liquidate self");
 
-        uint price = _updatePrice();
+        uint price = _updatePrice(true);
 
         require(!isUserSolvent(_user), "Market: user solvent");
 
@@ -220,19 +225,26 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket {
         debtToken.safeTransfer(treasury, fees);
     }
 
+    function checkPriceFrozen() private view {
+        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen");  // solhint-disable not-rely-on-time
+    }
+
     /**
      * @notice updates the current price of the collateral and saves it in `lastPrice`.
      * @return the price
      */
     function updatePrice() external override returns (uint) {
-        return _updatePrice();
+        return _updatePrice(false);
     }
 
-    function _updatePrice() internal returns (uint) {
+    function _updatePrice(bool _onFailCheckPriceFrozen) internal returns (uint) {
         (bool success, uint256 price) = oracle.fetchPrice();
         if (success) {
             lastPrice = price;
+            lastPriceTime = block.timestamp;
             emit LastPriceUpdated(price);
+        } else if (_onFailCheckPriceFrozen){
+            checkPriceFrozen();
         }
         return lastPrice;
     }
