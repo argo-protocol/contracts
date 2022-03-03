@@ -27,13 +27,10 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     event TreasuryUpdated(address newTreasury);
     event LastPriceUpdated(uint price);
     event FeesHarvested(uint fees);    
-
-    uint constant internal MAX_INT = 2**256 - 1;
     
     // Maximum time period allowed since Chainlink's latest round data timestamp, beyond which Chainlink is considered frozen.
     uint constant public ORACLE_MAX_TIMEOUT = 1 hours;
     
-
     address public treasury;
     IERC20 public collateralToken;
     IDebtToken public debtToken;
@@ -300,7 +297,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     //////
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
-        if (userCollateral[_user] == 0) return MAX_INT;
+        if (userCollateral[_user] == 0) return type(uint256).max;
         return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
     }
 
