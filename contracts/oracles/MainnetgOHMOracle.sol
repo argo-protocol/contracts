@@ -2,19 +2,9 @@
 pragma solidity ^0.8.0;
 
 import { IOracle } from "../interfaces/IOracle.sol";
+import { IgOHM } from "../interfaces/IgOHM.sol";
 import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 import { SafeAggregatorV3 } from "../libraries/SafeAggregatorV3.sol";
-
-interface IgOHM {
-    /**
-        @notice converts OHM amount to gOHM
-        @param _amount amount of gOHM
-        @return amount of OHM
-     */
-    function balanceFrom(uint256 _amount) external view returns (uint256);
-    function balanceTo(uint256 _amount) external view returns (uint256);
-    function index() external view returns (uint);
-}
 
 /**
  * @notice price oracle for gOHM-USD on the ethereum mainnet
