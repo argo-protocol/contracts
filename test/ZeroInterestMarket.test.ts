@@ -125,9 +125,10 @@ describe("ZeroInterestMarket", () => {
 
             it("borrow event emitted", async () => {
                 const BORROW_AMOUNT = `10${E18}`;
+                const TOTAL_DEBT = '10150000000000000000'; // $10.15
                 debtToken.transfer.returns(true);
                 await expect(market.connect(borrower).borrow(borrower.address, BORROW_AMOUNT)).
-                    to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, BORROW_AMOUNT);
+                    to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, TOTAL_DEBT);
             });
 
             it("reserves the fee amount for the treasury", async () => {
@@ -203,7 +204,7 @@ describe("ZeroInterestMarket", () => {
                 await expect(market.connect(borrower).deposit(borrower.address, COLL_AMOUNT)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address, COLL_AMOUNT);
                 await expect(market.connect(borrower).borrow(borrower.address, BORROW_AMOUNT)).
-                    to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, BORROW_AMOUNT);
+                    to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, DEBT_AMOUNT);
 
                 expect(await market.userDebt(borrower.address)).to.equal(DEBT_AMOUNT);
             });
@@ -341,7 +342,7 @@ describe("ZeroInterestMarket", () => {
                 oracle.fetchPrice.returns([true, `100${E18}`]);
                 await expect(market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address,`10${E18}`).
-                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address,`300${E18}`);
+                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address,`304500000000000000000`);
                 await expect(market.connect(borrower).repayAndWithdraw(`304500000000000000000`, `10${E18}`)).
                     to.emit(market, "Repay").withArgs(borrower.address, borrower.address,`304500000000000000000`).
                     and.emit(market, "Withdraw").withArgs(borrower.address, borrower.address,`10${E18}`);
@@ -361,7 +362,7 @@ describe("ZeroInterestMarket", () => {
                 
                 await expect(market.connect(borrower).depositAndBorrow(`10${E18}`, `300${E18}`)).
                     to.emit(market, "Deposit").withArgs(borrower.address, borrower.address,`10${E18}`).
-                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address, `300${E18}`);
+                    and.emit(market, "Borrow").withArgs(borrower.address, borrower.address, `304500000000000000000`);
                 
                 // Mock a bad oracle
                 oracle.fetchPrice.returns([false, `0`]);
