@@ -156,6 +156,7 @@ describe("SelfRepayingMarket", () => {
 
             it("can deposit on behalf of another account");
             it("reverts when amount is 0");
+            it("tracks shares of vault tokens");
         });
 
         describe("withdraw", () => {
@@ -183,6 +184,7 @@ describe("SelfRepayingMarket", () => {
             it("can send tokens to another account");
             it("reverts when LTV is too low");
             it("reverts when amount is 0");
+            it("updates price");
         });
 
         describe("borrow", () => {
@@ -220,10 +222,33 @@ describe("SelfRepayingMarket", () => {
                 const BORROW_AMOUNT = `80${e18}`
                 const AMOUNT_PLUS_FEE = `8080${'0'.repeat(16)}`;
                 await expect(market.connect(borrower).borrow(borrower.address, BORROW_AMOUNT))
-                    .to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, BORROW_AMOUNT);
+                    .to.emit(market, "Borrow").withArgs(borrower.address, borrower.address, AMOUNT_PLUS_FEE);
                 
                 expect(await market.totalDebt()).to.equal(AMOUNT_PLUS_FEE);
                 expect(await market.userDebt(borrower.address)).to.equal(AMOUNT_PLUS_FEE);
+            });
+
+            it("requires amount > 0");
+            it("enforces LTV");
+            it("updates price");
+        });
+
+        describe("harvest", () => {
+            const AMOUNT = `100${e18}`;
+
+            beforeEach(async () => {
+                await collateralToken.connect(borrower).approve(market.address, AMOUNT);
+                await market.connect(borrower).deposit(borrower.address, AMOUNT);
+            });
+
+            it("withdraws and swaps tokens to debt token", async () => {
+                /// cause some yield to happen
+                await collateralToken.mint(vaultToken.address, `10${e18}`);
+                expect(await collateralToken.balanceOf(vaultToken.address)).to.equal(`110${e18}`);
+
+                await market.harvest();
+
+                expect(await collateralToken.balanceOf(vaultToken.address)).to.equal(`100${e18}`);
             });
         });
     });

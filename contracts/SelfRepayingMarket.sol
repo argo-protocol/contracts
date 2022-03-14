@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import { IOracle } from "./interfaces/IOracle.sol";
 import { IDebtToken } from "./interfaces/IDebtToken.sol";
+import { IFlashSwap } from "./interfaces/IFlashSwap.sol";
 import { IERC4626 } from "./interfaces/IERC4626.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -97,5 +98,21 @@ contract SelfRepayingMarket is Ownable, Initializable {
 
         emit Borrow(msg.sender, _to, amountPlusFee);
         debtToken.transfer(_to, _amount);
+    }
+
+    function harvest(IFlashSwap swapper) external {
+        /// TODO: track shares in the contract
+        uint256 shares = vaultToken.balanceOf(address(this));
+        uint256 underlying = vaultToken.previewRedeem(shares);
+
+        if (underlying > totalCollateral) {
+            uint256 yield = underlying - totalCollateral;
+            uint256 fee = yield * yieldRate / PRECISION;
+
+            swapper.swap(collateralToken, debtToken, address(this), 0, yield - fee);
+            
+            // TODO: how much ARGO did we get?
+            // How do we do the accounting for this? 
+        }
     }
 }
