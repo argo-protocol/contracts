@@ -119,13 +119,14 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
         _updatePrice(true);
 
         uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
-        totalDebt = totalDebt + _amount + borrowRateFee;
-        userDebt[msg.sender] = userDebt[msg.sender] + _amount + borrowRateFee;
+        uint amountPlusFee = _amount + borrowRateFee;
+        totalDebt = totalDebt + amountPlusFee;
+        userDebt[msg.sender] = userDebt[msg.sender] + amountPlusFee;
 
         require(isUserSolvent(msg.sender), "Market: exceeds Loan-to-Value");
 
         feesCollected = feesCollected + borrowRateFee;
-        emit Borrow(msg.sender, _to, _amount);
+        emit Borrow(msg.sender, _to, amountPlusFee);
         debtToken.safeTransfer(_to, _amount);
     }
 
