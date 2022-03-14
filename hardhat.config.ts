@@ -10,28 +10,20 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
 import { BigNumber } from "ethers";
-import deployConfig from './deploy.config';
+import deployConfig from "./deploy.config";
 
-task(
-    "deployments",
-    "Print the list of deployment addresses for the current network",
-    async (args, hre) => {
-      const allDeployments = await hre.deployments.all();
-      const deployments = Object.keys(allDeployments)
+task("deployments", "Print the list of deployment addresses for the current network", async (args, hre) => {
+    const allDeployments = await hre.deployments.all();
+    const deployments = Object.keys(allDeployments)
         .sort()
         .map((name) => ({
-          name: name,
-          address: allDeployments[name].address,
+            name: name,
+            address: allDeployments[name].address,
         }));
-      console.table(deployments);
-    }
-  );
-  
+    console.table(deployments);
+});
 
-task(
-  "markets",
-  "Print the markets created by the currently deployed MarketFactory",
-  async (args, hre) => {
+task("markets", "Print the markets created by the currently deployed MarketFactory", async (args, hre) => {
     const deployment = await hre.deployments.get("MarketFactory");
     const marketFactory = await hre.ethers.getContractAt("MarketFactory", deployment.address);
 
@@ -39,8 +31,8 @@ task(
     for (let i = BigNumber.from(0); i.lt(numMarkets); i = i.add(1)) {
         const marketAddr = await marketFactory.markets(i);
         const market = (await hre.ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddr);
-        console.log('')
-        console.log(`${marketAddr} - ${i.toString()}`)
+        console.log("");
+        console.log(`${marketAddr} - ${i.toString()}`);
         console.log(`  lastPrice:          ${await market.lastPrice()}`);
         console.log(`  feesCollected:      ${await market.feesCollected()}`);
         console.log(`  maxLoanToValue:     ${await market.maxLoanToValue()}`);
@@ -51,11 +43,9 @@ task(
     }
 });
 
-
-
 dotenv.config();
 
-const privateKey: string | undefined = process.env.PRIVATE_KEY ??  "NO_PRIVATE_KEY";
+const privateKey: string | undefined = process.env.PRIVATE_KEY ?? "NO_PRIVATE_KEY";
 const alchemyApiKey: string | undefined = process.env.ALCHEMY_API_KEY ?? "NO_ALCHEMY_API_KEY";
 
 const chainIds = {
@@ -94,12 +84,18 @@ const config: HardhatUserConfig = {
             default: 1,
             rinkeby: deployConfig.rinkeby.operatorMultisig,
             mainnet: deployConfig.mainnet.operatorMultisig,
-        }, 
+        },
         treasuryMultisig: {
             default: 2,
             rinkeby: deployConfig.rinkeby.treasuryMultisig,
-            mainnet: deployConfig.mainnet.treasuryMultisig
-        }
+            mainnet: deployConfig.mainnet.treasuryMultisig,
+        },
+        stubUser1: {
+            default: 3,
+        },
+        stubUser2: {
+            default: 4,
+        },
     },
 
     networks: {
