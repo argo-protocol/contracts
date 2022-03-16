@@ -3,6 +3,8 @@ import {
     IERC20,
     LiquidityBootstrap,
     LiquidityBootstrap__factory,
+    LiquidityBootstrapVNext,
+    LiquidityBootstrapVNext__factory,
     DebtToken,
     DebtToken__factory,
     ICurveStableSwapPool
@@ -10,6 +12,7 @@ import {
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { forkNetwork, impersonate, forkReset } from "./utils/vm";
+import { BigNumber } from "ethers";
 
 const e18 = '0'.repeat(18);
 const CRV_FACTORY = "0xB9fC157394Af804a3578134A6585C0dc9cc990d4";
@@ -160,4 +163,51 @@ describe("LiquidityBootstrap", () => {
                 .to.be.revertedWith("Ownable");
         });
     });
+
+    describe("migrate", () => {
+        let boot2: LiquidityBootstrapVNext;
+
+        beforeEach(async () => {
+            const AMOUNT = `10000${e18}`
+            await threeCrv.connect(lp).approve(boot.address, AMOUNT);
+            await boot.connect(lp).createLPShares(AMOUNT, 0);
+            boot2 = await new LiquidityBootstrapVNext__factory(owner).deploy(boot.address);
+        });
+
+        it("will move liquidity to the new contract", async () => {
+            let shares = await boot.userShares(lp.address);
+            await expect(boot.connect(owner).setMigrationTarget(boot2.address))
+                .to.emit(boot, "MigrationTargetUpdated").withArgs(boot2.address);
+            await expect(boot2.connect(lp).migrate())
+                .to.emit(boot, "WithdrawLP").withArgs(lp.address, shares);
+
+            expect(await boot.userShares(lp.address)).to.equal(0);
+            expect(await boot.totalShares()).to.equal(0);
+            expect(await boot2.userShares(lp.address)).to.equal(shares);
+            expect(await boot2.totalShares()).to.equal(shares);
+            expect(await pool.balanceOf(boot2.address)).to.equal(shares);
+        });
+
+        it("will revert if msg.sender isn't migrationTarget", async () => {
+            await boot.connect(owner).setMigrationTarget(boot2.address);
+            await expect(boot.connect(bob).migrate(lp.address))
+                .to.be.revertedWith("invalid caller");
+        });
+
+        it("will revert if user has no shares", async () => {
+            await boot.connect(owner).setMigrationTarget(boot2.address);
+            await expect(boot2.connect(bob).migrate())
+                .to.be.revertedWith("insufficient shares");
+        });
+
+        it("will revert if no migration target set", async () => {
+            await expect(boot2.connect(lp).migrate())
+                .to.be.revertedWith("0x0 target");
+        });
+
+        it("will revert if non owner attempts to set migration target", async () => {
+            await expect(boot.connect(bob).setMigrationTarget(boot2.address))
+                .to.be.revertedWith("Ownable");
+        });
+    })
 });

@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import { IDebtToken } from "./interfaces/IDebtToken.sol";
+import { ICurveStableSwapPool } from "./interfaces/Curve.sol";
+import { ILiquidityMigrator } from "./interfaces/ILiquidityMigrator.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { ICurveStableSwapPool } from "./interfaces/Curve.sol";
 
-contract LiquidityBootstrap is Ownable, ReentrancyGuard {
+contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     using SafeERC20 for IDebtToken;
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for ICurveStableSwapPool;
@@ -17,6 +18,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard {
     event RedeemLP(address indexed user, uint256 shares);
     event WithdrawLP(address indexed user, uint256 shares);
     event OperatorUpdated(address operator);
+    event MigrationTargetUpdated(address target);
 
     /// this is ARGO
     IDebtToken public immutable debtToken;
@@ -35,6 +37,9 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard {
     /// when a user redeems their LP shares, the boost portion will
     /// be sent here
     address public operator;
+
+    /// address of the contract allowed to call the migrate function
+    address public migrationTarget;
 
     constructor (
         address _debtToken,
@@ -114,6 +119,25 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard {
         pairToken.safeTransfer(msg.sender, redeemed[1]);
         pool.safeTransfer(operator, _shares);
         return redeemed;
+    }
+
+    function setMigrationTarget(address _target) external onlyOwner {
+        migrationTarget = _target;
+        emit MigrationTargetUpdated(_target);
+    }
+
+    /// @inheritdoc ILiquidityMigrator
+    function migrate(address _user) external override returns (uint256) {
+        require(migrationTarget != address(0), "0x0 target");
+        require(migrationTarget == msg.sender, "invalid caller");
+        uint256 shares = userShares[_user] ;
+        require(shares > 0, "insufficient shares");
+        totalShares -= shares;
+        userShares[_user] = 0;
+        emit WithdrawLP(_user, shares);
+
+        pool.safeTransfer(migrationTarget, shares);
+        return shares;
     }
 
     /**
