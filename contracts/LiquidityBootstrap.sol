@@ -14,11 +14,11 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     using SafeERC20 for IERC20Metadata;
     using SafeERC20 for ICurveStableSwapPool;
 
-    event CreatedLP(address indexed user, uint256 shares);
+    event CreateLP(address indexed user, uint256 shares);
     event RedeemLP(address indexed user, uint256 shares);
     event WithdrawLP(address indexed user, uint256 shares);
-    event OperatorUpdated(address operator);
-    event MigrationTargetUpdated(address target);
+    event SetOperator(address operator);
+    event SetMigrationTarget(address target);
 
     /// this is ARGO
     IDebtToken public immutable debtToken;
@@ -52,7 +52,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         pool = ICurveStableSwapPool(_pool);
         operator = _operator;
 
-        emit OperatorUpdated(_operator);
+        emit SetOperator(_operator);
 
         IDebtToken(_debtToken).approve(_pool, type(uint256).max);
         IERC20Metadata(_pairToken).approve(_pool, type(uint256).max);
@@ -72,12 +72,12 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         amounts[1] = _amount;
 
         pairToken.safeTransferFrom(msg.sender, address(this), _amount);
-        uint shares = pool.add_liquidity(amounts, _minShares);
-        emit CreatedLP(msg.sender, shares);
+        uint boostedShares = pool.add_liquidity(amounts, _minShares);
+        emit CreateLP(msg.sender, boostedShares);
 
-        userShares[msg.sender] += shares;
-        totalShares += shares;
-        return shares;
+        userShares[msg.sender] += boostedShares;
+        totalShares += boostedShares;
+        return boostedShares;
     }
 
     /**
@@ -123,7 +123,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
 
     function setMigrationTarget(address _target) external onlyOwner {
         migrationTarget = _target;
-        emit MigrationTargetUpdated(_target);
+        emit SetMigrationTarget(_target);
     }
 
     /// @inheritdoc ILiquidityMigrator
@@ -148,7 +148,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     function setOperator(address _operator) external onlyOwner {
         require(_operator != address(0), "0x0");
         operator = _operator;
-        emit OperatorUpdated(_operator);
+        emit SetOperator(_operator);
     }
 
     /**
@@ -177,7 +177,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     /**
      * @notice previews the amount of LP shares that would be created once
      * pairTokens are matched up with an equivalent amount of Argo.
-     * Does NOT include slippage.
+     * Includes slippage.
      * @param _amount amount of pairTokens
      * @return the expected number of shares
      */

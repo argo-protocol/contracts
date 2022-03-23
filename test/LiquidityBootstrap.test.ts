@@ -148,7 +148,7 @@ describe("LiquidityBootstrap", () => {
     describe("setOperator", () => {
         it("updates the operator", async () => {
             await expect(boot.connect(owner).setOperator(bob.address))
-                .to.emit(boot, "OperatorUpdated").withArgs(bob.address);
+                .to.emit(boot, "SetOperator").withArgs(bob.address);
             
             expect(await boot.operator()).to.equal(bob.address);
         });
@@ -177,7 +177,7 @@ describe("LiquidityBootstrap", () => {
         it("will move liquidity to the new contract", async () => {
             let shares = await boot.userShares(lp.address);
             await expect(boot.connect(owner).setMigrationTarget(boot2.address))
-                .to.emit(boot, "MigrationTargetUpdated").withArgs(boot2.address);
+                .to.emit(boot, "SetMigrationTarget").withArgs(boot2.address);
             await expect(boot2.connect(lp).migrate())
                 .to.emit(boot, "WithdrawLP").withArgs(lp.address, shares);
 
