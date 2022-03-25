@@ -20,7 +20,7 @@ import { expect } from "chai";
 import { forkNetwork, forkReset, impersonate } from "../utils/vm";
 import { BigNumber } from "ethers";
 
-const E18 = '000000000000000000';
+const E18 = "000000000000000000";
 const GOHM_ADDRESS = "0x0ab87046fBb341D058F17CBC4c1133F25a20a52f";
 const OHM_ADDRESS = "0x64aa3364F17a4D01c6f1751Fd97C2BD3D7e7f1D5";
 const DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f";
@@ -47,17 +47,17 @@ describe("MainnetgOhmLiquidator", () => {
         [owner, alice, bob] = await ethers.getSigners();
 
         /// TODO: is there a way to use our deploy scripts here?
-        debtToken = await new DebtToken__factory(owner).deploy(owner.address);
+        debtToken = await new DebtToken__factory(owner).deploy(owner.address, ethers.constants.AddressZero);
         oracle = await new StubOracle__factory(owner).deploy();
-        let marketFactory = await new MarketFactory__factory(owner).deploy(owner.address)
+        let marketFactory = await new MarketFactory__factory(owner).deploy(owner.address);
         await marketFactory.createZeroInterestMarket(
             owner.address,
             GOHM_ADDRESS,
             debtToken.address,
             oracle.address,
-              60000, // loan-to-value (60%)
-              1500, // borrow rate (1.5%)
-              10000 // liquidation penalty (10%)
+            60000, // loan-to-value (60%)
+            1500, // borrow rate (1.5%)
+            10000 // liquidation penalty (10%)
         );
         let marketAddress = await marketFactory.markets(0);
         market = await (await ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddress);
@@ -67,7 +67,7 @@ describe("MainnetgOhmLiquidator", () => {
             250, // buy fee 0.25%
             250, // sell fee 0.25%
             owner.address
-        )
+        );
         await debtToken.mint(market.address, `10000000${E18}`);
         await debtToken.mint(psm.address, `10000000${E18}`);
 
@@ -80,7 +80,7 @@ describe("MainnetgOhmLiquidator", () => {
             DAI_ADDRESS,
             psm.address
         );
-        
+
         gOHM = await (await ethers.getContractFactory("ERC20")).attach(GOHM_ADDRESS);
         dai = await (await ethers.getContractFactory("ERC20")).attach(DAI_ADDRESS);
         whale = await impersonate(GOHM_WHALE);
