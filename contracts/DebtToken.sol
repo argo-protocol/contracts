@@ -27,19 +27,19 @@ import { ILayerZeroEndpoint } from "./interfaces/LayerZero/ILayerZeroEndpoint.so
  */
 contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint256 private maxFlashLoanAmount;
-    uint256 private flashFeeRate;
-    uint256 public feesCollected;
-    uint256 private constant FLASH_FEE_PRECISION = 1e5;
+    uint private maxFlashLoanAmount;
+    uint private flashFeeRate;
+    uint public feesCollected;
+    uint private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
     ILayerZeroEndpoint public immutable lzEndpoint;
     mapping(uint16 => bytes) public lzRemotes;
 
-    event FlashFeeRateUpdated(uint256 newFlashFeeRate);
-    event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
+    event FlashFeeRateUpdated(uint newFlashFeeRate);
+    event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
     event TreasuryUpdated(address newTreasury);
-    event FeesHarvested(uint256 fees);
+    event FeesHarvested(uint fees);
 
     constructor(address _treasury, address _lzEndpoint) ERC20("Argo Stablecoin", "ARGO") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
@@ -58,7 +58,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint256 _amount) external onlyOwner {
+    function mint(address _to, uint _amount) external onlyOwner {
         _mint(_to, _amount);
     }
 
@@ -66,7 +66,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint256 _amount) external {
+    function burn(uint _amount) external {
         _burn(msg.sender, _amount);
     }
 
@@ -79,7 +79,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @param _token The address of the token that is requested.
      * @return The amont of token that can be loaned.
      */
-    function maxFlashLoan(address _token) public view override returns (uint256) {
+    function maxFlashLoan(address _token) public view override returns (uint) {
         return _token == address(this) ? maxFlashLoanAmount : 0;
     }
 
@@ -89,7 +89,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
      */
-    function flashFee(address _token, uint256 _amount) public view override returns (uint256) {
+    function flashFee(address _token, uint _amount) public view override returns (uint) {
         require(_token == address(this), "ERC20FlashMint: wrong token");
         return (_amount * flashFeeRate) / FLASH_FEE_PRECISION;
     }
@@ -111,17 +111,17 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     function flashLoan(
         IERC3156FlashBorrower receiver,
         address token,
-        uint256 amount,
+        uint amount,
         bytes calldata data
     ) public override returns (bool) {
         require(amount <= maxFlashLoanAmount, "DebtToken: amount above max");
-        uint256 fee = flashFee(token, amount);
+        uint fee = flashFee(token, amount);
         _mint(address(receiver), amount);
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
             "DebtToken: invalid return value"
         );
-        uint256 currentAllowance = allowance(address(receiver), address(this));
+        uint currentAllowance = allowance(address(receiver), address(this));
         require(currentAllowance >= amount + fee, "allowance does not allow refund");
         _approve(address(receiver), address(this), currentAllowance - amount - fee);
         // save gas by burning the fee collected, will mint it again when harvesting
@@ -134,7 +134,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -144,7 +144,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @notice sets the flash loan cap
      * @param _maxFlashLoanAmount the new amount
      */
-    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyOwner {
+    function setMaxFlashLoanAmount(uint _maxFlashLoanAmount) external onlyOwner {
         maxFlashLoanAmount = _maxFlashLoanAmount;
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
     }
@@ -163,7 +163,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @notice harvests fees from flash loans to the treasury
      */
     function harvestFees() external {
-        uint256 fees = feesCollected;
+        uint fees = feesCollected;
         feesCollected = 0;
         emit FeesHarvested(fees);
 
@@ -178,7 +178,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     function sendTokens(
         uint16 _chainId, // send tokens to this chainId
         bytes calldata _dstOmniChainTokenAddr, // destination address of OmniChainToken
-        uint256 _qty // how many tokens to send
+        uint _qty // how many tokens to send
     ) public payable {
         // burn the tokens locally.
         // tokens will be minted on the destination.
@@ -230,7 +230,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         );
 
         // decode
-        (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
+        (address toAddr, uint qty) = abi.decode(_payload, (address, uint));
         // mint the tokens back into existence, to the toAddr from the message payload
         _mint(toAddr, qty);
     }
