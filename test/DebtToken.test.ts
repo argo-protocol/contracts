@@ -288,7 +288,7 @@ describe("DebtToken", () => {
                 it("can only be done once per chain", async () => {
                     await token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR);
                     await expect(token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR)).to.be.revertedWith(
-                        "DebtToken: setLZRemote already set"
+                        "DebtToken: remote already set"
                     );
                 });
             });
