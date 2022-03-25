@@ -19,28 +19,34 @@ import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contra
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ILayerZeroReceiver } from "./interfaces/LayerZero/ILayerZeroReceiver.sol";
+import { ILayerZeroEndpoint } from "./interfaces/LayerZero/ILayerZeroEndpoint.sol";
 
 /**
  * @notice A collateralized debt position token. Protocol assumes this is worth $1.
  */
-contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
+contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint private maxFlashLoanAmount;
-    uint private flashFeeRate;
-    uint public feesCollected;
-    uint private constant FLASH_FEE_PRECISION = 1e5;
+    uint256 private maxFlashLoanAmount;
+    uint256 private flashFeeRate;
+    uint256 public feesCollected;
+    uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
-    event FlashFeeRateUpdated(uint newFlashFeeRate);
-    event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
-    event TreasuryUpdated(address newTreasury);
-    event FeesHarvested(uint fees);
+    ILayerZeroEndpoint public lzEndpoint;
+    mapping(uint16 => bytes) public lzRemotes;
 
-    constructor(address _treasury) ERC20("Argo Stablecoin", "ARGO") {
+    event FlashFeeRateUpdated(uint256 newFlashFeeRate);
+    event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
+    event TreasuryUpdated(address newTreasury);
+    event FeesHarvested(uint256 fees);
+
+    constructor(address _treasury, address _lzEndpoint) ERC20("Argo Stablecoin", "ARGO") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;
+        lzEndpoint = ILayerZeroEndpoint(_lzEndpoint);
 
         emit TreasuryUpdated(treasury);
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
@@ -52,7 +58,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint _amount) external onlyOwner {
+    function mint(address _to, uint256 _amount) external onlyOwner {
         _mint(_to, _amount);
     }
 
@@ -60,7 +66,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint _amount) external {
+    function burn(uint256 _amount) external {
         _burn(msg.sender, _amount);
     }
 
@@ -73,12 +79,12 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @param _token The address of the token that is requested.
      * @return The amont of token that can be loaned.
      */
-    function maxFlashLoan(address _token) public view override returns (uint) {
+    function maxFlashLoan(address _token) public view override returns (uint256) {
         return _token == address(this) ? maxFlashLoanAmount : 0;
     }
 
     /**
-     * @dev Returns the fee applied when doing flash loans. 
+     * @dev Returns the fee applied when doing flash loans.
      * @param _token The token to be flash loaned.
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
@@ -128,7 +134,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -138,7 +144,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice sets the flash loan cap
      * @param _maxFlashLoanAmount the new amount
      */
-    function setMaxFlashLoanAmount(uint _maxFlashLoanAmount) external onlyOwner {
+    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyOwner {
         maxFlashLoanAmount = _maxFlashLoanAmount;
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
     }
@@ -157,11 +163,74 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice harvests fees from flash loans to the treasury
      */
     function harvestFees() external {
-        uint fees = feesCollected;
+        uint256 fees = feesCollected;
         feesCollected = 0;
         emit FeesHarvested(fees);
 
         // we burned the fee when we collected it
         _mint(treasury, fees);
+    }
+
+    /** LAYERZERO Implementation **/
+
+    // send tokens to another chain.
+    // this function sends the tokens from your address to the same address on the destination.
+    function sendTokens(
+        uint16 _chainId, // send tokens to this chainId
+        bytes calldata _dstOmniChainTokenAddr, // destination address of OmniChainToken
+        uint256 _qty // how many tokens to send
+    ) public payable {
+        // burn the tokens locally.
+        // tokens will be minted on the destination.
+        require(allowance(msg.sender, address(this)) >= _qty, "You need to approve the contract to send your tokens!");
+
+        // and burn the local tokens *poof*
+        _burn(msg.sender, _qty);
+
+        // abi.encode() the payload with the values to send
+        bytes memory payload = abi.encode(msg.sender, _qty);
+
+        // send LayerZero message
+        lzEndpoint.send{ value: msg.value }(
+            _chainId, // destination chainId
+            _dstOmniChainTokenAddr, // destination address of OmniChainToken
+            payload, // abi.encode()'ed bytes
+            payable(msg.sender), // refund address (LayerZero will refund any superflous gas back to caller of send()
+            address(0x0), // 'zroPaymentAddress' unused for this mock/example
+            bytes("") // 'txParameters' unused for this mock/example
+        );
+    }
+
+    // _chainId - the chainId for the remote contract
+    // _remoteAddress - the contract address on the remote chainId
+    // the owner must set remote contract addresses.
+    // in lzReceive(), a require() ensures only messages
+    // from known contracts can be received.
+    function setRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyOwner {
+        require(lzRemotes[_chainId].length == 0, "The remote address has already been set for the chainId!");
+        lzRemotes[_chainId] = _remoteAddress;
+    }
+
+    // receive the bytes payload from the source chain via LayerZero
+    // _fromAddress is the source OmniChainToken address
+    function lzReceive(
+        uint16 _srcChainId,
+        bytes memory _srcAddress,
+        uint64,
+        bytes memory _payload
+    ) external override {
+        require(msg.sender == address(lzEndpoint)); // boilerplate! lzReceive must be called by the lzEndpoint for security
+        // owner must have setRemote() to allow its remote contracts to send to this contract
+        require(
+            _srcAddress.length == lzRemotes[_srcChainId].length &&
+                keccak256(_srcAddress) == keccak256(lzRemotes[_srcChainId]),
+            "Invalid remote sender address. owner should call setRemote() to enable remote contract"
+        );
+
+        // decode
+        (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
+
+        // mint the tokens back into existence, to the toAddr from the message payload
+        _mint(toAddr, qty);
     }
 }
