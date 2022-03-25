@@ -33,7 +33,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
-    ILayerZeroEndpoint public lzEndpoint;
+    ILayerZeroEndpoint public immutable lzEndpoint;
     mapping(uint16 => bytes) public lzRemotes;
 
     event FlashFeeRateUpdated(uint256 newFlashFeeRate);
@@ -219,17 +219,18 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         uint64,
         bytes memory _payload
     ) external override {
-        require(msg.sender == address(lzEndpoint), "DebtToken: lzReceive bad sender"); // boilerplate! lzReceive must be called by the lzEndpoint for security
-        // owner must have setRemote() to allow its remote contracts to send to this contract
+        // lzReceive must be called by the lzEndpoint for security
+        require(msg.sender == address(lzEndpoint), "DebtToken: lzReceive bad sender");
+
+        //Owner should call setRemote() to enable remote contract
         require(
             _srcAddress.length == lzRemotes[_srcChainId].length &&
                 keccak256(_srcAddress) == keccak256(lzRemotes[_srcChainId]),
             "DebtToken: lzReceive bad remote"
-        ); //Owner should call setRemote() to enable remote contract
+        );
 
         // decode
         (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
-
         // mint the tokens back into existence, to the toAddr from the message payload
         _mint(toAddr, qty);
     }
