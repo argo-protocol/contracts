@@ -1,0 +1,100 @@
+{
+  "address": "0x7bf24b63aF844b2a04699600FcaB74f7159727E2",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "fetchPrice",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "price",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_price",
+          "type": "uint256"
+        }
+      ],
+      "name": "setPrice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x3fde68c5f1df69d441c1239cb7cf7914da910237b26951da7ed018282a316d08",
+  "receipt": {
+    "to": null,
+    "from": "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
+    "contractAddress": "0x7bf24b63aF844b2a04699600FcaB74f7159727E2",
+    "transactionIndex": 0,
+    "gasUsed": "100917",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x8214c122fcdd02a6a6f5dcdb0247f303a10b5018d236de9ec54a68cc4f2ab93a",
+    "transactionHash": "0x3fde68c5f1df69d441c1239cb7cf7914da910237b26951da7ed018282a316d08",
+    "logs": [],
+    "blockNumber": 10385751,
+    "cumulativeGasUsed": "100917",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "cb3f40648db43135a6dda83ae6e19f15",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"fetchPrice\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"}],\"name\":\"setPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/stubs/StubOracle.sol\":\"StubOracle\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":1},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IOracle {\\n    function fetchPrice() external view returns (bool, uint);\\n}\",\"keccak256\":\"0xf3bc4b871ebb74641f91462364551170df871926ad43013db480e3857095c1a1\",\"license\":\"MIT\"},\"contracts/stubs/StubOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport { IOracle } from \\\"../interfaces/IOracle.sol\\\";\\n\\ncontract StubOracle is IOracle {\\n    uint public price;\\n\\n    function setPrice(uint _price) external {\\n        price = _price;\\n    }\\n\\n    function fetchPrice() external view override returns (bool, uint) {\\n        return (true, price);\\n    }\\n}\",\"keccak256\":\"0xd8be4d1377ae08e550da8fde8872b7e4a36d3c82d7608ad40b0bd1d75921978e\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060dc8061001f6000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea26469706673582212201921740e3ebb4a908723475b3ba26d715d7ee20e3bda6e370e33a085168bd88864736f6c63430008060033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea26469706673582212201921740e3ebb4a908723475b3ba26d715d7ee20e3bda6e370e33a085168bd88864736f6c63430008060033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 7851,
+        "contract": "contracts/stubs/StubOracle.sol:StubOracle",
+        "label": "price",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

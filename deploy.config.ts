@@ -36,7 +36,7 @@ let config = {
     },
     rinkeby: {
         treasuryMultisig: "0xfE07A76856A6FFD96ddF466DEdedab1d76355A6b",
-        operatorMultisig: "0xfE07A76856A6FFD96ddF466DEdedab1d76355A6b",
+        operatorMultisig: "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
         dai: "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa",
         gOHM: "0xB4Aaf6857411248A79B95bcb1C13E86140fE9C29",
         ohmEthAggregator: ZERO_ADDRESS, // OHM-ETH oracle stubbed

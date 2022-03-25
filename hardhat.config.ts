@@ -73,6 +73,7 @@ function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
         accounts: privateKey !== "NO_PRIVATE_KEY" ? [`${privateKey}`] : [],
         chainId: chainIds[network],
         url,
+        gasPrice: 50000000000
     };
 }
 

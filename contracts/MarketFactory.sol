@@ -88,4 +88,8 @@ contract MarketFactory is Ownable {
     function numMarkets() public view returns (uint256) {
         return markets.length;
     }
+
+    function getMarkets() public view returns (IMarket[] memory) {
+        return markets;
+    }
 }
