@@ -182,7 +182,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     ) public payable {
         // burn the tokens locally.
         // tokens will be minted on the destination.
-        require(allowance(msg.sender, address(this)) >= _qty, "You need to approve the contract to send your tokens!");
+        require(allowance(msg.sender, address(this)) >= _qty, "DebtToken: low allowance");
 
         // and burn the local tokens *poof*
         _burn(msg.sender, _qty);
@@ -206,8 +206,8 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     // the owner must set remote contract addresses.
     // in lzReceive(), a require() ensures only messages
     // from known contracts can be received.
-    function setRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyOwner {
-        require(lzRemotes[_chainId].length == 0, "The remote address has already been set for the chainId!");
+    function setLZRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyOwner {
+        require(lzRemotes[_chainId].length == 0, "DebtToken: setLZRemote already set");
         lzRemotes[_chainId] = _remoteAddress;
     }
 
@@ -219,13 +219,13 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         uint64,
         bytes memory _payload
     ) external override {
-        require(msg.sender == address(lzEndpoint)); // boilerplate! lzReceive must be called by the lzEndpoint for security
+        require(msg.sender == address(lzEndpoint), "DebtToken: lzReceive bad sender"); // boilerplate! lzReceive must be called by the lzEndpoint for security
         // owner must have setRemote() to allow its remote contracts to send to this contract
         require(
             _srcAddress.length == lzRemotes[_srcChainId].length &&
                 keccak256(_srcAddress) == keccak256(lzRemotes[_srcChainId]),
-            "Invalid remote sender address. owner should call setRemote() to enable remote contract"
-        );
+            "DebtToken: lzReceive bad remote"
+        ); //Owner should call setRemote() to enable remote contract
 
         // decode
         (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
