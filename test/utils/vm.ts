@@ -30,3 +30,11 @@ export async function impersonate(address: string): Promise<SignerWithAddress> {
     });
     return await ethers.getSigner(address); 
 }
+
+export async function setStorageAt(address: string, position: string, value: string) {
+    await network.provider.send("hardhat_setStorageAt", [address, position, value]);
+}
+
+export async function getStorageAt(address: string, position: string) {
+    return await network.provider.send("eth_getStorageAt", [address, position]);
+}

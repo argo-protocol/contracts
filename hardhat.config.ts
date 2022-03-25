@@ -78,13 +78,18 @@ function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
 
 const config: HardhatUserConfig = {
     solidity: {
-        version: "0.8.6",
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 1,
-            },
-        },
+        compilers: [
+            { version: "0.6.12" },
+            {
+                version: "0.8.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1,
+                    },
+                },
+            }
+        ]
     },
     namedAccounts: {
         deployer: {

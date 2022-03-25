@@ -2,12 +2,14 @@
 pragma solidity ^0.8.0;
 
 import { IDebtToken } from "./interfaces/IDebtToken.sol";
-import { ICurveStableSwapPool } from "./interfaces/Curve.sol";
+import { ICurveStableSwapPool, ICurveGaugeV3 } from "./interfaces/Curve.sol";
 import { ILiquidityMigrator } from "./interfaces/ILiquidityMigrator.sol";
+import { IRewardsPool, IRewardsPoolFactory } from "./interfaces/Synthetix.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "hardhat/console.sol";
 
 contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     using SafeERC20 for IDebtToken;
@@ -26,6 +28,17 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     IERC20Metadata public immutable pairToken;
     /// the ARGO/3CRV lp token
     ICurveStableSwapPool public immutable pool;
+    /// the curve gauge
+    ICurveGaugeV3 public immutable gauge;
+
+    /// factory to create more rewards contracts
+    IRewardsPoolFactory rewardsFactory;
+    /// curve's max tokens is 8, and a 9th in case we want to use our own token
+    uint256 public constant MAX_TOKENS = 8;
+    /// tokens being offered by rewards
+    address[MAX_TOKENS] public rewardTokens;    
+    /// reward contracts that will hold CRV rewards
+    IRewardsPool[MAX_TOKENS] public rewards;
 
     /// amount of total LP tokens held by contract
     uint256 public totalShares;
@@ -45,17 +58,20 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         address _debtToken,
         address _pairToken,
         address _pool,
+        address _gauge,
         address _operator
     ) {
         debtToken = IDebtToken(_debtToken);
         pairToken = IERC20Metadata(_pairToken);
         pool = ICurveStableSwapPool(_pool);
+        gauge = ICurveGaugeV3(_gauge);
         operator = _operator;
 
         emit SetOperator(_operator);
 
         IDebtToken(_debtToken).approve(_pool, type(uint256).max);
         IERC20Metadata(_pairToken).approve(_pool, type(uint256).max);
+        IERC20Metadata(_pool).approve(_gauge, type(uint256).max);
     }
 
     /**
@@ -73,6 +89,8 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
 
         pairToken.safeTransferFrom(msg.sender, address(this), _amount);
         uint boostedShares = pool.add_liquidity(amounts, _minShares);
+        IERC20Metadata(address(pool)).approve(address(gauge), boostedShares);
+        gauge.deposit(boostedShares, address(this), false);
         emit CreateLP(msg.sender, boostedShares);
 
         userShares[msg.sender] += boostedShares;
@@ -94,6 +112,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         totalShares -= boostedShares;
         emit WithdrawLP(msg.sender, _shares);
 
+        gauge.withdraw(boostedShares, true);
         pool.safeTransfer(msg.sender, _shares);
         pool.safeTransfer(operator, _shares);
     }
@@ -114,6 +133,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         totalShares -= boostedShares;
         emit RedeemLP(msg.sender, _shares);
 
+        gauge.withdraw(boostedShares, true);
         uint256[2] memory redeemed = pool.remove_liquidity(_shares, _minAmounts);
         debtToken.safeTransfer(msg.sender, redeemed[0]);
         pairToken.safeTransfer(msg.sender, redeemed[1]);
@@ -136,6 +156,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
         userShares[_user] = 0;
         emit WithdrawLP(_user, shares);
 
+        gauge.withdraw(shares, true);
         pool.safeTransfer(migrationTarget, shares);
         return shares;
     }

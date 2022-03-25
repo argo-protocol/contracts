@@ -7,17 +7,23 @@ import {
     LiquidityBootstrapVNext__factory,
     DebtToken,
     DebtToken__factory,
-    ICurveStableSwapPool
+    ICurveStableSwapPool,
+    ICurveGaugeV3,
+    IStakingRewards,
 } from "../typechain";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { forkNetwork, impersonate, forkReset } from "./utils/vm";
+import { forkNetwork, impersonate, forkReset, setStorageAt, getStorageAt } from "./utils/vm";
 import { BigNumber } from "ethers";
 
 const e18 = '0'.repeat(18);
 const CRV_FACTORY = "0xB9fC157394Af804a3578134A6585C0dc9cc990d4";
 const THREE_CRV = "0x6c3f90f043a72fa612cbac8115ee7e52bde6e490";
 const THREE_POOL = "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7";
+const TRICRYPTO_GAUGE = "0x6955a55416a06839309018A8B0cB72c4DDC11f15";
+const TRICRYPTO_REWARDS = "";
+const ALUSD_GAUGE = "0x9582C4ADACB3BCE56Fea3e590F05c3ca2fb9C477";
+const ALUSD_STAKING = "0xB76256d1091E93976C61449d6e500D9f46d827D4";
 
 describe("LiquidityBootstrap", () => {
     let owner: SignerWithAddress;
@@ -30,6 +36,8 @@ describe("LiquidityBootstrap", () => {
     let debtToken: DebtToken;
     let threeCrv: IERC20;
     let pool: ICurveStableSwapPool;
+    let gauge: ICurveGaugeV3;
+    let staking: IStakingRewards;
 
     beforeEach(async () => {
         await forkNetwork(14388540);
@@ -43,11 +51,48 @@ describe("LiquidityBootstrap", () => {
 
         pool = await ethers.getContractAt("ICurveStableSwapPool", poolAddress);
         threeCrv = await ethers.getContractAt("IERC20", THREE_CRV);
+        gauge = await ethers.getContractAt("ICurveGaugeV3", TRICRYPTO_GAUGE);
+        // gauge = await ethers.getContractAt("ICurveGaugeV3", ALUSD_GAUGE);
+        // staking = await ethers.getContractAt("IStakingRewards", ALUSD_STAKING);
+        // console.log(await gauge.lp_token());
+        // for (let i = 14; i < 15; i++) {
+        //     let x = await getStorageAt(gauge.address, `0x${i}`)
+        //     let n = BigNumber.from(x);
+        //     let m = n.mod("1461501637330902918203684832716283019655932542976"); // 2**160
+        //     let tl = n.shl(160);
+        //     let tr = n.shr(160);
+        //     let alcxStaking = await ethers.getContractAt("IStakingRewards", m.toHexString());
+        //     await setStorageAt(alcxStaking.address, "0x6", `0x${'0'.repeat(24)}${pool.address.replace("0x", "")}`);
+        //     expect(await alcxStaking.stakingToken()).to.equal(pool.address);
+        // }
+
+
+        /// hijack the TRICRYPTO gauge for our LP token
+        await setStorageAt(gauge.address, "0x2", `0x${'0'.repeat(24)}${pool.address.replace("0x", "")}`);
+        expect(await gauge.lp_token()).to.equal(pool.address);
+
+
+
+        // /// hijack the staking rewards contract as well
+        // await setStorageAt(staking.address, "0x6", `0x${'0'.repeat(24)}${pool.address.replace("0x", "")}`);
+        // expect(await staking.stakingToken()).to.equal(pool.address);
+        // console.log("get staking token")
+        // console.log(await staking.stakingToken());
+        // console.log(0, await getStorageAt(staking.address, "0x0"));
+        // console.log(1, await getStorageAt(staking.address, "0x1"));
+        // console.log(2, await getStorageAt(staking.address, "0x2"));
+        // console.log(3, await getStorageAt(staking.address, "0x3"));
+        // console.log(4, await getStorageAt(staking.address, "0x4"));
+        // console.log(5, await getStorageAt(staking.address, "0x5"));
+        // console.log(6, await getStorageAt(staking.address, "0x6"));
+        // console.log(7, await getStorageAt(staking.address, "0x7"));
+
 
         boot = await new LiquidityBootstrap__factory(owner).deploy(
             debtToken.address,
             THREE_CRV,
             pool.address,
+            gauge.address,
             operator.address,
         );
 
@@ -114,7 +159,7 @@ describe("LiquidityBootstrap", () => {
             let amounts = await boot.previewRemove(shares);
             await boot.connect(lp).redeemLPShares(shares, amounts);
 
-            expect(await pool.balanceOf(boot.address)).to.equal(1); // crv leaves dust
+            expect(await pool.balanceOf(boot.address)).to.equal(0); // crv leaves dust
             expect(await pool.balanceOf(operator.address)).to.equal(shares);
         });
 
@@ -122,7 +167,7 @@ describe("LiquidityBootstrap", () => {
             let shares = await boot.ownedShares(lp.address);
             await boot.connect(lp).withdrawLPShares(shares);
             
-            expect(await pool.balanceOf(boot.address)).to.equal(1); // crv leaves dust
+            expect(await pool.balanceOf(boot.address)).to.equal(0); // crv leaves dust
             expect(await pool.balanceOf(lp.address)).to.equal(shares);
             expect(await pool.balanceOf(operator.address)).to.equal(shares);
             expect(await boot.userShares(lp.address)).to.equal(1);

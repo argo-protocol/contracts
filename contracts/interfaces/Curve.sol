@@ -16,3 +16,10 @@ interface ICurveFactory {
     function find_pool_for_coins(address _from, address _to) external view returns(address);
     function deploy_metapool(address _base_pool, string memory _name, string memory _symbol, address _coin, uint256 _A, uint256 _fee) external returns (address);
 }
+
+interface ICurveGaugeV3 {
+    function lp_token() external view returns(address);
+    function withdraw(uint256 _value, bool _claim_rewards) external;
+    function deposit(uint256 _value, address _addr, bool _claim_rewards) external;
+    function claim_rewards(address _addr, address _receiver) external;
+}
