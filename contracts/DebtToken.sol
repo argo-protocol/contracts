@@ -89,7 +89,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
      */
-    function flashFee(address _token, uint _amount) public view override returns (uint) {
+    function flashFee(address _token, uint256 _amount) public view override returns (uint256) {
         require(_token == address(this), "ERC20FlashMint: wrong token");
         return (_amount * flashFeeRate) / FLASH_FEE_PRECISION;
     }
@@ -111,17 +111,17 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     function flashLoan(
         IERC3156FlashBorrower receiver,
         address token,
-        uint amount,
+        uint256 amount,
         bytes calldata data
     ) public override returns (bool) {
         require(amount <= maxFlashLoanAmount, "DebtToken: amount above max");
-        uint fee = flashFee(token, amount);
+        uint256 fee = flashFee(token, amount);
         _mint(address(receiver), amount);
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
             "DebtToken: invalid return value"
         );
-        uint currentAllowance = allowance(address(receiver), address(this));
+        uint256 currentAllowance = allowance(address(receiver), address(this));
         require(currentAllowance >= amount + fee, "allowance does not allow refund");
         _approve(address(receiver), address(this), currentAllowance - amount - fee);
         // save gas by burning the fee collected, will mint it again when harvesting
@@ -178,7 +178,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     function sendTokens(
         uint16 _chainId, // send tokens to this chainId
         bytes calldata _dstOmniChainTokenAddr, // destination address of OmniChainToken
-        uint _qty // how many tokens to send
+        uint256 _qty // how many tokens to send
     ) public payable {
         // burn the tokens locally.
         // tokens will be minted on the destination.
@@ -230,7 +230,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         );
 
         // decode
-        (address toAddr, uint qty) = abi.decode(_payload, (address, uint));
+        (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
         // mint the tokens back into existence, to the toAddr from the message payload
         _mint(toAddr, qty);
     }
