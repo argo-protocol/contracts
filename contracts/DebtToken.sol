@@ -187,6 +187,8 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         require(allowance(msg.sender, address(this)) >= _qty, "DebtToken: low allowance");
         _burn(msg.sender, _qty);
         bytes memory payload = abi.encode(msg.sender, _qty);
+
+        /* solhint-disable check-send-result */
         lzEndpoint.send{ value: msg.value }(
             _chainId,
             _dstOmniChainTokenAddr,
