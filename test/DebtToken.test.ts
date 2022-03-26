@@ -320,6 +320,14 @@ describe("DebtToken", () => {
                             "0x"
                         );
                     });
+
+                    it("succeeds even if admin is 0x0", async () => {
+                        await token.connect(lzAdmin).transferLayerZeroAdmin(ethers.constants.AddressZero);
+                        await token.connect(owner).mint(other.address, QTY);
+                        await token.connect(other).approve(token.address, QTY);
+                        await token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY);
+                        expect(await token.balanceOf(other.address)).to.eq(0);
+                    });
                 });
 
                 describe("setLZRemote", () => {
@@ -376,6 +384,13 @@ describe("DebtToken", () => {
                         await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
                         await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
 
+                        expect(await token.balanceOf(other.address)).to.eq(QTY);
+                    });
+
+                    it("receives even if admin is 0x0", async () => {
+                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
+                        await token.connect(lzAdmin).transferLayerZeroAdmin(ethers.constants.AddressZero);
+                        await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
                         expect(await token.balanceOf(other.address)).to.eq(QTY);
                     });
                 });
