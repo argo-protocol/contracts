@@ -33,20 +33,21 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
-    ILayerZeroEndpoint public immutable lzEndpoint;
     mapping(uint16 => bytes) public lzRemotes;
+    ILayerZeroEndpoint public lzEndpoint;
+    address public lzAdmin;
 
     event FlashFeeRateUpdated(uint256 newFlashFeeRate);
     event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
     event TreasuryUpdated(address newTreasury);
     event FeesHarvested(uint256 fees);
 
-    constructor(address _treasury, address _lzEndpoint) ERC20("Argo Stablecoin", "ARGO") {
+    constructor(address _treasury) ERC20("Argo Stablecoin", "ARGO") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;
-        lzEndpoint = ILayerZeroEndpoint(_lzEndpoint);
+        lzAdmin = msg.sender;
 
         emit TreasuryUpdated(treasury);
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
@@ -171,7 +172,9 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         _mint(treasury, fees);
     }
 
-    // LayerZero Omnichain Functions
+    ///////////
+    ///// LayerZero Omnichain Support
+    ///////////
 
     /**
      * @notice Send tokens to another chain.
@@ -183,7 +186,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         uint16 _chainId,
         bytes calldata _dstOmniChainTokenAddr,
         uint256 _qty
-    ) public payable {
+    ) public payable requireLayerZeroEnabled {
         require(allowance(msg.sender, address(this)) >= _qty, "DebtToken: low allowance");
         _burn(msg.sender, _qty);
         bytes memory payload = abi.encode(msg.sender, _qty);
@@ -200,16 +203,6 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
     }
 
     /**
-     * @notice The owner must set remote contract addresses
-     * @param _chainId The chainId for the remote contract
-     * @param _remoteAddress The contract address on the remote chainId
-     */
-    function setLZRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyOwner {
-        require(lzRemotes[_chainId].length == 0, "DebtToken: remote already set");
-        lzRemotes[_chainId] = _remoteAddress;
-    }
-
-    /**
      * @notice LayerZero endpoint will invoke this function to deliver the message on the destination
      * @param _srcChainId - the source endpoint identifier
      * @param _srcAddress - the source sending contract address from the source chain
@@ -221,7 +214,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         bytes memory _srcAddress,
         uint64,
         bytes memory _payload
-    ) external override {
+    ) external override requireLayerZeroEnabled {
         require(msg.sender == address(lzEndpoint), "DebtToken: lzReceive bad sender");
         require(
             _srcAddress.length == lzRemotes[_srcChainId].length &&
@@ -230,5 +223,48 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         );
         (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
         _mint(toAddr, qty);
+    }
+
+    /**
+     * @notice The owner must set remote contract addresses
+     * @param _chainId The chainId for the remote contract
+     * @param _remoteAddress The contract address on the remote chainId
+     */
+    function setLayerZeroRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyLayerZeroAdmin {
+        lzRemotes[_chainId] = _remoteAddress;
+    }
+
+    /**
+     * @notice The owner must set remote contract addresses
+     * @dev Only settable by the lzAdmin address. Disable LayerZero by setting to 0x0.
+     * @param _endpoint The address of the ILayerZeroEndpoint contract
+     */
+    function setLayerZeroEndpoint(address _endpoint) public onlyLayerZeroAdmin {
+        lzEndpoint = ILayerZeroEndpoint(_endpoint);
+    }
+
+    /**
+     * @notice Allow the LayerZero admin to set a new LayerZero admin.
+     * @dev Effectively renounce ownership by setting to 0x0.
+     * @param _lzAdmin The new address of Layer Zero admin (lzAdmin).
+     */
+    function transferLayerZeroAdmin(address _lzAdmin) public onlyLayerZeroAdmin {
+        lzAdmin = _lzAdmin;
+    }
+
+    /**
+     * @notice Only allow the LayerZero admin.
+     */
+    modifier onlyLayerZeroAdmin() {
+        require(msg.sender == lzAdmin, "DebtToken: LZ admin required");
+        _;
+    }
+
+    /**
+     * @notice Only allow when lzEndpoint is set
+     */
+    modifier requireLayerZeroEnabled() {
+        require(address(lzEndpoint) != address(0), "DebtToken: LZ disabled");
+        _;
     }
 }

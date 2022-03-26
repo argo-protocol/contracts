@@ -13,31 +13,28 @@ describe("DebtToken", () => {
     let owner: SignerWithAddress;
     let treasury: SignerWithAddress;
     let other: SignerWithAddress;
-    let another: SignerWithAddress;
-    let lzEndpoint: FakeContract<ILayerZeroEndpoint>;
+    let lzAdmin: SignerWithAddress;
 
     beforeEach(async () => {
-        [owner, treasury, other, another] = await ethers.getSigners();
-
-        lzEndpoint = await smock.fake<ILayerZeroEndpoint>("ILayerZeroEndpoint");
+        [owner, treasury, other, lzAdmin] = await ethers.getSigners();
     });
 
     describe("constructor", () => {
         it("sets the constants", async () => {
-            const token = await new DebtToken__factory(owner).deploy(treasury.address, lzEndpoint.address);
+            const token = await new DebtToken__factory(owner).deploy(treasury.address);
 
             expect(await token.name()).to.equal("Argo Stablecoin");
             expect(await token.symbol()).to.equal("ARGO");
             expect(await token.decimals()).to.equal(18);
             expect(await token.totalSupply()).to.equal(0);
-            expect(await token.lzEndpoint()).to.equal(lzEndpoint.address);
+            expect(await token.lzEndpoint()).to.equal(ethers.constants.AddressZero);
         });
     });
 
     describe("post-construction", () => {
         let token: DebtToken;
         beforeEach(async () => {
-            token = await new DebtToken__factory(owner).deploy(treasury.address, lzEndpoint.address);
+            token = await new DebtToken__factory(owner).deploy(treasury.address);
         });
 
         describe("mint", () => {
@@ -238,97 +235,149 @@ describe("DebtToken", () => {
             });
         });
 
-        context("LayerZero", () => {
+        context.only("LayerZero", () => {
             const REMOTE_CHAIN = 1020;
             const REMOTE_ADDR = "0x90f79bf6eb2c4f870365e785982e1f101e93b906";
             const QTY = 1000;
 
-            describe("sendTokens", () => {
-                it("requires sufficient allowance", async () => {
+            let lzEndpoint: FakeContract<ILayerZeroEndpoint>;
+            beforeEach(async () => {
+                lzEndpoint = await smock.fake<ILayerZeroEndpoint>("ILayerZeroEndpoint");
+            });
+
+            describe("admin", () => {
+                it("starts as initial owner", async () => {
+                    expect(await token.lzAdmin()).to.eq(owner.address);
+                });
+
+                it("is transferrable by current admin", async () => {
+                    await token.transferLayerZeroAdmin(other.address);
+                    expect(await token.lzAdmin()).to.eq(other.address);
+                });
+
+                it("required to transfer admin role", async () => {
+                    await expect(token.connect(other).transferLayerZeroAdmin(lzAdmin.address)).to.be.revertedWith(
+                        "DebtToken: LZ admin required"
+                    );
+                });
+
+                it("can renounce by transferring to 0x0", async () => {
+                    await token.transferLayerZeroAdmin(ethers.constants.AddressZero);
+                    expect(await token.lzAdmin()).to.eq(ethers.constants.AddressZero);
+                    await expect(token.connect(other).transferLayerZeroAdmin(lzAdmin.address)).to.be.revertedWith(
+                        "DebtToken: LZ admin required"
+                    );
+                });
+            });
+
+            describe("not enabled", () => {
+                it("reverts when sending", async () => {
                     await expect(token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY)).to.be.revertedWith(
-                        "DebtToken: low allowance"
+                        "DebtToken: LZ disabled"
                     );
                 });
 
-                it("sends to endpoint", async () => {
-                    await token.connect(owner).mint(other.address, QTY);
-                    await token.connect(other).approve(token.address, QTY);
-
-                    await token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY);
-
-                    expect(await token.balanceOf(other.address)).to.eq(0);
-
-                    const expectedPayload = ethers.utils.defaultAbiCoder.encode(
-                        ["address", "uint256"],
-                        [other.address, QTY]
-                    );
-                    expect(lzEndpoint.send).to.be.calledWith(
-                        REMOTE_CHAIN,
-                        REMOTE_ADDR,
-                        expectedPayload,
-                        other.address,
-                        ethers.constants.AddressZero,
-                        "0x"
-                    );
+                it("reverts when receiving", async () => {
+                    await expect(
+                        token
+                            .connect(lzEndpoint.wallet)
+                            .lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, ethers.utils.defaultAbiCoder.encode([], []))
+                    ).to.be.revertedWith("DebtToken: LZ disabled");
                 });
             });
 
-            describe("setLZRemote", () => {
-                it("sets the lzRemotes key-value", async () => {
-                    await token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                    expect(await token.lzRemotes(REMOTE_CHAIN)).to.eq(REMOTE_ADDR);
-                });
-
-                it("requires owner", async () => {
-                    await expect(token.connect(other).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR)).to.be.revertedWith(
-                        "Ownable: caller is not the owner"
-                    );
-                });
-
-                it("can only be done once per chain", async () => {
-                    await token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                    await expect(token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR)).to.be.revertedWith(
-                        "DebtToken: remote already set"
-                    );
-                });
-            });
-
-            describe("lzReceive", () => {
-                let payload: string;
-
+            describe("enabled", () => {
                 beforeEach(async () => {
-                    payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [other.address, QTY]);
-                    // fund the endpoint contract
-                    await owner.sendTransaction({
-                        to: lzEndpoint.address,
-                        value: ethers.utils.parseEther("1.0"),
+                    await token.setLayerZeroEndpoint(lzEndpoint.address);
+                    await token.transferLayerZeroAdmin(lzAdmin.address);
+                });
+
+                describe("sendTokens", () => {
+                    it("requires sufficient allowance", async () => {
+                        await expect(
+                            token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY)
+                        ).to.be.revertedWith("DebtToken: low allowance");
+                    });
+
+                    it("sends to endpoint", async () => {
+                        await token.connect(owner).mint(other.address, QTY);
+                        await token.connect(other).approve(token.address, QTY);
+
+                        await token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY);
+
+                        expect(await token.balanceOf(other.address)).to.eq(0);
+
+                        const expectedPayload = ethers.utils.defaultAbiCoder.encode(
+                            ["address", "uint256"],
+                            [other.address, QTY]
+                        );
+                        expect(lzEndpoint.send).to.be.calledWith(
+                            REMOTE_CHAIN,
+                            REMOTE_ADDR,
+                            expectedPayload,
+                            other.address,
+                            ethers.constants.AddressZero,
+                            "0x"
+                        );
                     });
                 });
 
-                it("reverts if not called by endpoint", async () => {
-                    await expect(
-                        token.connect(owner).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
-                    ).to.be.revertedWith("DebtToken: lzReceive bad sender");
+                describe("setLZRemote", () => {
+                    it("requires admin", async () => {
+                        await expect(
+                            token.connect(other).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR)
+                        ).to.be.revertedWith("DebtToken: LZ admin required");
+                    });
+
+                    it("admin can set key-value", async () => {
+                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
+                        expect(await token.lzRemotes(REMOTE_CHAIN)).to.eq(REMOTE_ADDR);
+                    });
+
+                    it("admin can set repeatedly", async () => {
+                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
+                        await expect(token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR)).not.to.be
+                            .reverted;
+                    });
                 });
 
-                it("reverts if remote not set", async () => {
-                    await expect(
-                        token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
-                    ).to.be.revertedWith("DebtToken: lzReceive bad remote");
-                });
+                describe("lzReceive", () => {
+                    let payload: string;
 
-                it("reverts if called with incorrect remote address", async () => {
-                    await token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                    await expect(
-                        token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, other.address, 0, payload)
-                    ).to.be.revertedWith("DebtToken: lzReceive bad remote");
-                });
+                    beforeEach(async () => {
+                        payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [other.address, QTY]);
+                        // fund the endpoint contract
+                        await owner.sendTransaction({
+                            to: lzEndpoint.address,
+                            value: ethers.utils.parseEther("1.0"),
+                        });
+                    });
 
-                it("increases balance of payload address by payload amount", async () => {
-                    await token.connect(owner).setLZRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                    await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
+                    it("reverts if not called by endpoint", async () => {
+                        await expect(
+                            token.connect(owner).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
+                        ).to.be.revertedWith("DebtToken: lzReceive bad sender");
+                    });
 
-                    expect(await token.balanceOf(other.address)).to.eq(QTY);
+                    it("reverts if remote not set", async () => {
+                        await expect(
+                            token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
+                        ).to.be.revertedWith("DebtToken: lzReceive bad remote");
+                    });
+
+                    it("reverts if called with incorrect remote address", async () => {
+                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
+                        await expect(
+                            token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, other.address, 0, payload)
+                        ).to.be.revertedWith("DebtToken: lzReceive bad remote");
+                    });
+
+                    it("increases balance of payload address by payload amount", async () => {
+                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
+                        await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
+
+                        expect(await token.balanceOf(other.address)).to.eq(QTY);
+                    });
                 });
             });
         });
