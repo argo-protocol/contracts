@@ -39,33 +39,39 @@ describe("PegStability", () => {
         });
 
         it("reverts on zero debt token address", async () => {
-            await expect(new PegStability__factory(owner).deploy(
-                ethers.constants.AddressZero,
-                reserveToken.address,
-                250, // 0.25%
-                450, // 0.45%
-                treasury.address
-            )).to.be.revertedWith("0x0 debt token");
+            await expect(
+                new PegStability__factory(owner).deploy(
+                    ethers.constants.AddressZero,
+                    reserveToken.address,
+                    250, // 0.25%
+                    450, // 0.45%
+                    treasury.address
+                )
+            ).to.be.revertedWith("0x0 debt token");
         });
 
         it("reverts on zero reserve token address", async () => {
-            await expect(new PegStability__factory(owner).deploy(
-                debtToken.address,
-                ethers.constants.AddressZero,
-                250, // 0.25%
-                450, // 0.45%
-                treasury.address
-            )).to.be.revertedWith("0x0 reserve token");
+            await expect(
+                new PegStability__factory(owner).deploy(
+                    debtToken.address,
+                    ethers.constants.AddressZero,
+                    250, // 0.25%
+                    450, // 0.45%
+                    treasury.address
+                )
+            ).to.be.revertedWith("0x0 reserve token");
         });
 
         it("reverts on zero treasury address", async () => {
-            await expect(new PegStability__factory(owner).deploy(
-                debtToken.address,
-                reserveToken.address,
-                250, // 0.25%
-                450, // 0.45%
-                ethers.constants.AddressZero
-            )).to.be.revertedWith("0x0 treasury");
+            await expect(
+                new PegStability__factory(owner).deploy(
+                    debtToken.address,
+                    reserveToken.address,
+                    250, // 0.25%
+                    450, // 0.45%
+                    ethers.constants.AddressZero
+                )
+            ).to.be.revertedWith("0x0 treasury");
         });
     });
 
@@ -114,8 +120,7 @@ describe("PegStability", () => {
 
                 const AMOUNT = `10000${E18}`;
 
-                await expect(psm.connect(other).buy(AMOUNT)).
-                    to.emit(psm, "ReservesBought").withArgs(AMOUNT);
+                await expect(psm.connect(other).buy(AMOUNT)).to.emit(psm, "ReservesBought").withArgs(AMOUNT);
             });
 
             it("reverts if debt token balance is less than amount and fees previously collected", async () => {
@@ -130,8 +135,7 @@ describe("PegStability", () => {
                 await psm.connect(other).sell(AMOUNT);
                 expect(await psm.sellFeesCollected()).to.equal(`45${E18}`);
 
-                await expect(psm.connect(other).buy(AMOUNT)).
-                    to.be.revertedWith("insufficient balance")
+                await expect(psm.connect(other).buy(AMOUNT)).to.be.revertedWith("insufficient balance");
             });
 
             it("reverts if debt token balance is less than amount", async () => {
@@ -141,8 +145,7 @@ describe("PegStability", () => {
 
                 const AMOUNT = `10000${E18}`;
 
-                await expect(psm.connect(other).buy(AMOUNT)).
-                    to.be.revertedWith("insufficient balance")
+                await expect(psm.connect(other).buy(AMOUNT)).to.be.revertedWith("insufficient balance");
             });
         });
 
@@ -156,7 +159,7 @@ describe("PegStability", () => {
 
                 await psm.connect(other).sell(AMOUNT);
 
-                expect(reserveToken.transfer).to.be.calledWith(other.address, AMOUNT)
+                expect(reserveToken.transfer).to.be.calledWith(other.address, AMOUNT);
             });
 
             it("transfers debt tokens plus fees from msg.sender", async () => {
@@ -168,7 +171,7 @@ describe("PegStability", () => {
 
                 await psm.connect(other).sell(AMOUNT);
 
-                expect(debtToken.transferFrom).to.be.calledWith(other.address, psm.address, `50225${E18}`)
+                expect(debtToken.transferFrom).to.be.calledWith(other.address, psm.address, `50225${E18}`);
                 expect(await psm.sellFeesCollected()).to.equal(`225${E18}`);
             });
 
@@ -179,8 +182,7 @@ describe("PegStability", () => {
 
                 const AMOUNT = `50000${E18}`;
 
-                await expect(psm.connect(other).sell(AMOUNT)).
-                    to.emit(psm, "ReservesSold").withArgs(AMOUNT);
+                await expect(psm.connect(other).sell(AMOUNT)).to.emit(psm, "ReservesSold").withArgs(AMOUNT);
             });
 
             it("reverts if reserve token balance is less than amount", async () => {
@@ -190,8 +192,7 @@ describe("PegStability", () => {
 
                 const AMOUNT = `10000${E18}`;
 
-                await expect(psm.connect(other).buy(AMOUNT)).
-                    to.be.revertedWith("insufficient balance")
+                await expect(psm.connect(other).buy(AMOUNT)).to.be.revertedWith("insufficient balance");
             });
         });
 
@@ -209,18 +210,19 @@ describe("PegStability", () => {
                 reserveToken.transfer.returns(true);
 
                 const AMOUNT = `100${E18}`;
-                await expect(psm.connect(owner).withdrawReserves(AMOUNT)).
-                    to.emit(psm, "ReservesWithdrawn").withArgs(AMOUNT);
+                await expect(psm.connect(owner).withdrawReserves(AMOUNT))
+                    .to.emit(psm, "ReservesWithdrawn")
+                    .withArgs(AMOUNT);
             });
 
             it("reverts if amount is zero", async () => {
-                await expect(psm.connect(owner).withdrawReserves(0)).
-                    to.be.revertedWith("zero withdraw");
+                await expect(psm.connect(owner).withdrawReserves(0)).to.be.revertedWith("zero withdraw");
             });
 
             it("reverts if not owner", async () => {
-                await expect(psm.connect(other).withdrawReserves(1)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(psm.connect(other).withdrawReserves(1)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
 
@@ -238,53 +240,52 @@ describe("PegStability", () => {
                 debtToken.transfer.returns(true);
 
                 const AMOUNT = `100${E18}`;
-                await expect(psm.connect(owner).withdrawDebtTokens(AMOUNT)).
-                    to.emit(psm, "DebtTokensWithdrawn").withArgs(AMOUNT);
+                await expect(psm.connect(owner).withdrawDebtTokens(AMOUNT))
+                    .to.emit(psm, "DebtTokensWithdrawn")
+                    .withArgs(AMOUNT);
             });
 
             it("reverts if amount is zero", async () => {
-                await expect(psm.connect(owner).withdrawDebtTokens(0)).
-                    to.be.revertedWith("zero withdraw");
+                await expect(psm.connect(owner).withdrawDebtTokens(0)).to.be.revertedWith("zero withdraw");
             });
 
             it("reverts if not owner", async () => {
-                await expect(psm.connect(other).withdrawDebtTokens(1)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(psm.connect(other).withdrawDebtTokens(1)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
 
         describe("setBuyFee", () => {
             it("updates the buy fee", async () => {
                 await psm.connect(owner).setBuyFee(1000);
-                expect(await psm.buyFee()).to.equal(1000)
-            })
+                expect(await psm.buyFee()).to.equal(1000);
+            });
 
             it("can only be done by the owner", async () => {
-                await expect(psm.connect(other).setBuyFee(1000)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
-            })
+                await expect(psm.connect(other).setBuyFee(1000)).to.be.revertedWith("Ownable: caller is not the owner");
+            });
 
             it("will revert if set too high", async () => {
-                await expect(psm.connect(owner).setBuyFee(100000)).
-                    to.be.revertedWith("fee too high");
-            })
+                await expect(psm.connect(owner).setBuyFee(100000)).to.be.revertedWith("fee too high");
+            });
         });
 
         describe("setSellFee", () => {
             it("updates the sell fee", async () => {
                 await psm.connect(owner).setSellFee(1000);
-                expect(await psm.sellFee()).to.equal(1000)
-            })
+                expect(await psm.sellFee()).to.equal(1000);
+            });
 
             it("can only be done by the owner", async () => {
-                await expect(psm.connect(other).setSellFee(1000)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
-            })
+                await expect(psm.connect(other).setSellFee(1000)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
+            });
 
             it("will revert if set too high", async () => {
-                await expect(psm.connect(owner).setSellFee(100000)).
-                    to.be.revertedWith("fee too high");
-            })
+                await expect(psm.connect(owner).setSellFee(100000)).to.be.revertedWith("fee too high");
+            });
         });
 
         describe("harvestFees", () => {
@@ -302,12 +303,11 @@ describe("PegStability", () => {
 
                 await psm.connect(other).sell(AMOUNT);
                 await psm.connect(other).buy(AMOUNT);
-                
+
                 expect(await psm.buyFeesCollected()).to.equal(BUY_FEES);
                 expect(await psm.sellFeesCollected()).to.equal(SELL_FEES);
 
-                await expect(psm.harvestFees()).
-                    to.emit(psm, "FeesHarvested").withArgs(`350${E18}`);
+                await expect(psm.harvestFees()).to.emit(psm, "FeesHarvested").withArgs(`350${E18}`);
 
                 expect(await psm.buyFeesCollected()).to.equal(0);
                 expect(await psm.sellFeesCollected()).to.equal(0);
@@ -315,7 +315,6 @@ describe("PegStability", () => {
                 expect(reserveToken.transfer).to.be.calledWith(treasury.address, BUY_FEES);
             });
         });
-
 
         describe("recoverERC20", () => {
             it("transfer random ERC20 tokens to the owner", async () => {
@@ -326,19 +325,22 @@ describe("PegStability", () => {
             });
 
             it("cannot recover debt token", async () => {
-                await expect(psm.connect(owner).recoverERC20(debtToken.address, 100)).
-                    to.be.revertedWith("Cannot recover debt tokens");
+                await expect(psm.connect(owner).recoverERC20(debtToken.address, 100)).to.be.revertedWith(
+                    "Cannot recover debt tokens"
+                );
             });
 
             it("cannot recover reserve token", async () => {
-                await expect(psm.connect(owner).recoverERC20(reserveToken.address, 100)).
-                    to.be.revertedWith("Cannot recover reserve tokens");
+                await expect(psm.connect(owner).recoverERC20(reserveToken.address, 100)).to.be.revertedWith(
+                    "Cannot recover reserve tokens"
+                );
             });
 
             it("can only be done by the owner", async () => {
                 let token = await smock.fake<IERC20>("IERC20");
-                await expect(psm.connect(other).recoverERC20(token.address, 100)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(psm.connect(other).recoverERC20(token.address, 100)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
     });

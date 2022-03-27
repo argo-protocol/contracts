@@ -31,18 +31,15 @@ interface IwstETH {
 contract MainnetwstETH is IOracle {
     using SafeAggregatorV3 for AggregatorV3Interface;
 
-    IwstETH private immutable wstETH;        
+    IwstETH private immutable wstETH;
     AggregatorV3Interface private immutable stEthUSDFeed;
 
-    constructor(
-        address _wstETH,
-        address _stEthUSDFeed
-    ) {
+    constructor(address _wstETH, address _stEthUSDFeed) {
         require(_wstETH != address(0), "Oracle: 0x0 wstETH address");
         require(_stEthUSDFeed != address(0), "Oracle: 0x0 chainlink address");
-        
+
         wstETH = IwstETH(_wstETH);
-        stEthUSDFeed = AggregatorV3Interface(_stEthUSDFeed);        
+        stEthUSDFeed = AggregatorV3Interface(_stEthUSDFeed);
     }
 
     /**
@@ -56,7 +53,7 @@ contract MainnetwstETH is IOracle {
         if (!success) {
             return (false, 0);
         }
-                     
+
         return (true, wstETH.getWstETHByStETH(price));
     }
 }

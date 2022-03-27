@@ -7,8 +7,8 @@ import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2
 import { FixedPoint } from "@uniswap/lib/contracts/libraries/FixedPoint.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {UniswapV2OracleLibrary} from "../libraries/uniswap/UniswapV2OracleLibrary.sol";
-import {UniswapV2Library} from "../libraries/uniswap/UniswapV2Library.sol";
+import { UniswapV2OracleLibrary } from "../libraries/uniswap/UniswapV2OracleLibrary.sol";
+import { UniswapV2Library } from "../libraries/uniswap/UniswapV2Library.sol";
 
 // Fixed window oracle that recomputes the average price for the entire period once every period
 // Note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
@@ -35,8 +35,8 @@ contract UniswapPairOracle is Ownable {
         address factory,
         address tokenA,
         address tokenB,
-        address _owner    
-    ) {        
+        address _owner
+    ) {
         IUniswapV2Pair _pair = IUniswapV2Pair(UniswapV2Library.pairFor(factory, tokenA, tokenB));
         pair = _pair;
         token0 = _pair.token0();
@@ -47,7 +47,7 @@ contract UniswapPairOracle is Ownable {
         uint112 reserve1;
         (reserve0, reserve1, blockTimestampLast) = _pair.getReserves();
         require(reserve0 != 0 && reserve1 != 0, "UniswapPairOracle: NO_RESERVES"); // Ensure that there's liquidity in the pair
-        Ownable._transferOwnership(_owner);    
+        Ownable._transferOwnership(_owner);
     }
 
     function setPeriod(uint256 _period) external onlyOwner {
