@@ -90,6 +90,12 @@ const config: HardhatUserConfig = {
             rinkeby: deployConfig.rinkeby.treasuryMultisig,
             mainnet: deployConfig.mainnet.treasuryMultisig,
         },
+        stubUser1: {
+            default: 3,
+        },
+        stubUser2: {
+            default: 4,
+        },
     },
 
     networks: {
