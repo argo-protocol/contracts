@@ -24,7 +24,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
     const DaiPSMContract = await hre.ethers.getContractFactory("PegStability");
     const contract = await DaiPSMContract.attach(daiPSMResult.address);
-    if (await contract.owner() != operatorMultisig) {
+    if ((await contract.owner()) != operatorMultisig) {
         deployments.log("transfering ownership to operatorMultisig");
         await contract.transferOwnership(operatorMultisig);
     }

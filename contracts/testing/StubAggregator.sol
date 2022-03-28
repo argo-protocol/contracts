@@ -5,7 +5,7 @@ import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 
 contract StubAggregator is AggregatorV3Interface {
     uint8 public override decimals;
-    string public  override description;
+    string public override description;
     uint256 public override version;
     int256 private answer;
     bool public noData = false;
@@ -35,12 +35,13 @@ contract StubAggregator is AggregatorV3Interface {
         view
         override
         returns (
-        uint80 roundId,
-        int256 answer_,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-        ) {
+            uint80 roundId,
+            int256 answer_,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
         require(!noData, "No data present");
         roundId = _roundId;
         answer_ = answer;
@@ -56,12 +57,13 @@ contract StubAggregator is AggregatorV3Interface {
         view
         override
         returns (
-        uint80 roundId,
-        int256 answer_,
-        uint256 startedAt,
-        uint256 updatedAt,
-        uint80 answeredInRound
-        ) {
+            uint80 roundId,
+            int256 answer_,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
+    {
         require(!noData, "No data present");
         roundId = 0;
         answer_ = answer;

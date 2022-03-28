@@ -16,10 +16,10 @@ describe("DebtToken", () => {
 
     describe("constructor", () => {
         it("sets the constants", async () => {
-            const token = await (new DebtToken__factory(owner)).deploy(treasury.address);
+            const token = await new DebtToken__factory(owner).deploy(treasury.address);
 
-            expect(await token.name()).to.equal("SIN USD");
-            expect(await token.symbol()).to.equal("SIN");
+            expect(await token.name()).to.equal("Argo Stablecoin");
+            expect(await token.symbol()).to.equal("ARGO");
             expect(await token.decimals()).to.equal(18);
             expect(await token.totalSupply()).to.equal(0);
         });
@@ -28,7 +28,7 @@ describe("DebtToken", () => {
     describe("post-construction", () => {
         let token: DebtToken;
         beforeEach(async () => {
-            token = await (new DebtToken__factory(owner)).deploy(treasury.address);
+            token = await new DebtToken__factory(owner).deploy(treasury.address);
         });
 
         describe("mint", () => {
@@ -40,8 +40,9 @@ describe("DebtToken", () => {
             });
 
             it("can only be done by the owner", async () => {
-                await expect(token.connect(other).mint(other.address, 1234)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(token.connect(other).mint(other.address, 1234)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
 
@@ -62,8 +63,7 @@ describe("DebtToken", () => {
 
             it("reverts if burning more than balance", async () => {
                 await token.connect(owner).mint(other.address, 1234);
-                await expect(token.connect(other).burn(1235)).
-                    to.be.revertedWith("ERC20: burn amount exceeds balance");
+                await expect(token.connect(other).burn(1235)).to.be.revertedWith("ERC20: burn amount exceeds balance");
             });
         });
 
@@ -91,8 +91,9 @@ describe("DebtToken", () => {
             });
 
             it("reverts if another token is passed", async () => {
-                await expect(token.flashFee(other.address, `1000${E18}`)).
-                    to.be.revertedWith("ERC20FlashMint: wrong token");
+                await expect(token.flashFee(other.address, `1000${E18}`)).to.be.revertedWith(
+                    "ERC20FlashMint: wrong token"
+                );
             });
         });
 
@@ -132,8 +133,9 @@ describe("DebtToken", () => {
                 const FEE_AMOUNT = `1${E18}`;
                 let borrower = await new TestFlashBorrower__factory(other).deploy(APPROVE_FEES);
                 await token.mint(borrower.address, FEE_AMOUNT);
-                await expect(token.flashLoan(borrower.address, token.address, `1000${E18}`, [])).
-                    to.be.revertedWith("allowance does not allow refund");
+                await expect(token.flashLoan(borrower.address, token.address, `1000${E18}`, [])).to.be.revertedWith(
+                    "allowance does not allow refund"
+                );
             });
 
             it("is capped", async () => {
@@ -141,8 +143,9 @@ describe("DebtToken", () => {
                 const FEE_AMOUNT = `10000000${E18}`;
                 const BORROW_AMOUNT = `1000000000000000000000001`;
                 await token.mint(borrower.address, FEE_AMOUNT);
-                await expect(token.flashLoan(borrower.address, token.address, BORROW_AMOUNT, [])).
-                    to.be.revertedWith("DebtToken: amount above max");
+                await expect(token.flashLoan(borrower.address, token.address, BORROW_AMOUNT, [])).to.be.revertedWith(
+                    "DebtToken: amount above max"
+                );
             });
         });
 
@@ -168,54 +171,61 @@ describe("DebtToken", () => {
             });
 
             it("emits an event", async () => {
-                await expect(token.connect(other).harvestFees()).
-                    to.emit(token, "FeesHarvested").withArgs(FEE_AMOUNT);
+                await expect(token.connect(other).harvestFees()).to.emit(token, "FeesHarvested").withArgs(FEE_AMOUNT);
             });
         });
 
         describe("setFlashFeeRate", () => {
             it("updates the flashFeeRate", async () => {
-                await expect(token.connect(owner).setFlashFeeRate(100)).
-                    to.emit(token, "FlashFeeRateUpdated").withArgs(100);
+                await expect(token.connect(owner).setFlashFeeRate(100))
+                    .to.emit(token, "FlashFeeRateUpdated")
+                    .withArgs(100);
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setFlashFeeRate(100)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(token.connect(other).setFlashFeeRate(100)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
 
             it("cannot set a rate greater than 100%", async () => {
-                await expect(token.connect(owner).setFlashFeeRate(100000)).
-                    to.be.revertedWith("DebtToken: rate too high");
+                await expect(token.connect(owner).setFlashFeeRate(100000)).to.be.revertedWith(
+                    "DebtToken: rate too high"
+                );
             });
         });
 
         describe("setMaxFlashLoanAmount", () => {
             it("updates the maxFlashLoanAmount", async () => {
-                await expect(token.connect(owner).setMaxFlashLoanAmount(`10000${E18}`)).
-                    to.emit(token, "MaxFlashLoanAmountUpdated").withArgs(`10000${E18}`);
+                await expect(token.connect(owner).setMaxFlashLoanAmount(`10000${E18}`))
+                    .to.emit(token, "MaxFlashLoanAmountUpdated")
+                    .withArgs(`10000${E18}`);
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setMaxFlashLoanAmount(100)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(token.connect(other).setMaxFlashLoanAmount(100)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
         });
 
         describe("setTreasury", () => {
             it("updates the treasury", async () => {
-                await expect(token.connect(owner).setTreasury(other.address)).
-                    to.emit(token, "TreasuryUpdated").withArgs(other.address);
+                await expect(token.connect(owner).setTreasury(other.address))
+                    .to.emit(token, "TreasuryUpdated")
+                    .withArgs(other.address);
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setTreasury(other.address)).
-                    to.be.revertedWith("Ownable: caller is not the owner");
+                await expect(token.connect(other).setTreasury(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
             });
 
             it("cannot be set to zero address", async () => {
-                await expect(token.connect(owner).setTreasury(ethers.constants.AddressZero)).
-                    to.be.revertedWith("DebtToken: 0x0 treasury address");
+                await expect(token.connect(owner).setTreasury(ethers.constants.AddressZero)).to.be.revertedWith(
+                    "DebtToken: 0x0 treasury address"
+                );
             });
         });
     });

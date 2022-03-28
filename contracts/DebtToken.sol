@@ -1,6 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+//
+//        ___           ___           ___           ___
+//       /\  \         /\  \         /\__\         /\  \
+//      /::\  \       /::\  \       /:/ _/_       /::\  \
+//     /:/\:\  \     /:/\:\__\     /:/ /\  \     /:/\:\  \
+//    /:/ /::\  \   /:/ /:/  /    /:/ /::\  \   /:/  \:\  \
+//   /:/_/:/\:\__\ /:/_/:/__/___ /:/__\/\:\__\ /:/__/ \:\__\
+//   \:\/:/  \/__/ \:\/:::::/  / \:\  \ /:/  / \:\  \ /:/  /
+//    \::/__/       \::/~~/~~~~   \:\  /:/  /   \:\  /:/  /
+//     \:\  \        \:\~~\        \:\/:/  /     \:\/:/  /
+//      \:\__\        \:\__\        \::/  /       \::/  /
+//       \/__/         \/__/         \/__/         \/__/
+//
+
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
@@ -22,7 +36,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     event TreasuryUpdated(address newTreasury);
     event FeesHarvested(uint fees);
 
-    constructor(address _treasury) ERC20("SIN USD", "SIN") {
+    constructor(address _treasury) ERC20("Argo Stablecoin", "ARGO") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
         treasury = _treasury;
         maxFlashLoanAmount = 0;
@@ -64,7 +78,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     }
 
     /**
-     * @dev Returns the fee applied when doing flash loans. 
+     * @dev Returns the fee applied when doing flash loans.
      * @param _token The token to be flash loaned.
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.

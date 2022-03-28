@@ -17,27 +17,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                     18, // decimals
                     "OHMv2 / ETH", // description
                     4, // version
-                    "65632235192786370" // price
+                    "65632235192786370", // price
                 ],
                 log: true,
             });
             config.ohmEthAggregator = ohmEthResult.address;
-        }    
+        }
 
         let uniswapOracleResult = await deploy("uniswapOracle", {
             contract: "uniswapOracle",
             from: deployer,
-            args: [                            
-                config.sushiSwapFactory,
-                config.btrfly,
-                config.ohmv2,                
-            ],
+            args: [config.sushiSwapFactory, config.btrfly, config.ohmv2],
             log: true,
         });
         config.uniswapOracle = uniswapOracleResult.address;
         const UniswapOracleContract = await hre.ethers.getContractFactory("uniswapOracle");
         const uniswapOracleContract = await UniswapOracleContract.attach(uniswapOracleResult.address);
-        if (await uniswapOracleContract.owner() != config.operatorMultisig) {
+        if ((await uniswapOracleContract.owner()) != config.operatorMultisig) {
             await uniswapOracleContract.transferOwnership(config.operatorMultisig);
         }
 
@@ -50,7 +46,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                 config.uniswapOracle,
                 config.ohmv2,
                 config.ohmEthAggregator,
-                config.ethUsdAggregator
+                config.ethUsdAggregator,
             ],
             log: true,
         });

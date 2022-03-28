@@ -9,7 +9,6 @@ import { StubOracle } from "../contracts/stubs/StubOracle.sol";
 import { ERC20Mock } from "../contracts/testing/ERC20Mock.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-
 contract ZeroInterestMarketTest is DSTest {
     TestAccount public owner;
     TestAccount public treasury;
@@ -50,12 +49,12 @@ contract ZeroInterestMarketTest is DSTest {
         if (_price > 1e40) return;
         if (_price < 1e5) return;
 
-        uint debtAmount = _borrowAmount + (_borrowAmount * BORROW_FEE / market.BORROW_RATE_PRECISION());
+        uint debtAmount = _borrowAmount + ((_borrowAmount * BORROW_FEE) / market.BORROW_RATE_PRECISION());
         debtToken.mint(address(market), debtAmount);
         oracle.setPrice(_price);
         collateralToken.approve(address(market), 1e18);
 
-        uint ltv = debtAmount * market.LOAN_TO_VALUE_PRECISION() / _price;
+        uint ltv = (debtAmount * market.LOAN_TO_VALUE_PRECISION()) / _price;
 
         if (ltv <= MAX_LTV) {
             market.depositAndBorrow(1e18, _borrowAmount);
@@ -91,7 +90,8 @@ contract ZeroInterestMarketTest is DSTest {
         if (_newPrice < 90000e18) {
             // this will cause a liquidation
             liquidator.liquidate(address(this), _repayAmount);
-            uint valueOfLiqAssets = collateralToken.balanceOf(address(liquidator)) * _newPrice / market.LAST_PRICE_PRECISION();
+            uint valueOfLiqAssets = (collateralToken.balanceOf(address(liquidator)) * _newPrice) /
+                market.LAST_PRICE_PRECISION();
             uint amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
             assertGt(valueOfLiqAssets, amountPaid);
         } else {
@@ -104,4 +104,3 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 }
-
