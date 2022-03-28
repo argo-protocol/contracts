@@ -23,11 +23,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const deployment = await hre.deployments.get("MarketFactory");
     const marketFactory = await hre.ethers.getContractAt("MarketFactory", deployment.address);
-    const marketTokens = await Promise.all((await marketFactory.getMarkets()).map(async (addr) => {
-        let market = await hre.ethers.getContractAt("ZeroInterestMarket", addr);
-        let token = await market.collateralToken();
-        return token;
-    }));
+    const marketTokens = await Promise.all(
+        (
+            await marketFactory.getMarkets()
+        ).map(async (addr) => {
+            let market = await hre.ethers.getContractAt("ZeroInterestMarket", addr);
+            let token = await market.collateralToken();
+            return token;
+        })
+    );
 
     console.log(marketTokens);
 
@@ -74,5 +78,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 func.tags = ["TestMarkets"];
 func.dependencies = ["MarketFactory", "StubDai", "DebtToken", "mainnet-gOHM"];
-export default func;
 
+export default func;
