@@ -37,14 +37,20 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     event Withdraw(address indexed from, address indexed to, uint256 amount);
     event Borrow(address indexed from, address indexed to, uint256 amount);
     event Repay(address indexed from, address indexed to, uint256 amount);
-    event Liquidate(address indexed from, address indexed to, uint256 repayDebt, uint256 liquidatedCollateral, uint256 liquidationPrice);
+    event Liquidate(
+        address indexed from,
+        address indexed to,
+        uint256 repayDebt,
+        uint256 liquidatedCollateral,
+        uint256 liquidationPrice
+    );
     event TreasuryUpdated(address newTreasury);
     event LastPriceUpdated(uint price);
-    event FeesHarvested(uint fees);    
-    
+    event FeesHarvested(uint fees);
+
     // Maximum time period allowed since Chainlink's latest round data timestamp, beyond which Chainlink is considered frozen.
-    uint constant public ORACLE_MAX_TIMEOUT = 1 hours;
-    
+    uint public constant ORACLE_MAX_TIMEOUT = 1 hours;
+
     address public treasury;
     IERC20 public collateralToken;
     IDebtToken public debtToken;
@@ -52,22 +58,22 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     IOracle public oracle;
     uint public lastPrice;
     uint public lastPriceTime;
-    uint constant public LAST_PRICE_PRECISION = 1e18;
+    uint public constant LAST_PRICE_PRECISION = 1e18;
 
     uint public feesCollected;
 
     uint public maxLoanToValue;
-    uint constant public LOAN_TO_VALUE_PRECISION = 1e5;
+    uint public constant LOAN_TO_VALUE_PRECISION = 1e5;
     uint public borrowRate;
-    uint constant public BORROW_RATE_PRECISION = 1e5;
+    uint public constant BORROW_RATE_PRECISION = 1e5;
     uint public liquidationPenalty;
-    uint constant public LIQUIDATION_PENALTY_PRECISION = 1e5;
+    uint public constant LIQUIDATION_PENALTY_PRECISION = 1e5;
 
     mapping(address => uint) public userCollateral;
     mapping(address => uint) public userDebt;
     uint public totalCollateral;
     uint public totalDebt;
- 
+
     function initialize(
         address _owner,
         address _treasury,
@@ -95,13 +101,13 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
      * @param _to the account that receives the collateral
      * @param _amount the amount of collateral tokens
      */
-    function deposit(address _to, uint _amount) public override whenNotPaused{
+    function deposit(address _to, uint _amount) public override whenNotPaused {
         userCollateral[_to] = userCollateral[_to] + _amount;
         totalCollateral = totalCollateral + _amount;
 
         collateralToken.safeTransferFrom(msg.sender, address(this), _amount);
 
-         emit Deposit(msg.sender, _to, _amount);
+        emit Deposit(msg.sender, _to, _amount);
     }
 
     /**
@@ -110,7 +116,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
      * @param _amount the amount of collateral tokens
      */
     function withdraw(address _to, uint _amount) public override whenNotPaused {
-        require(_amount <= userCollateral[msg.sender], "Market: amount too large");    
+        require(_amount <= userCollateral[msg.sender], "Market: amount too large");
 
         _updatePrice(true);
 
@@ -132,7 +138,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     function borrow(address _to, uint _amount) public override whenNotPaused {
         _updatePrice(true);
 
-        uint borrowRateFee = _amount * borrowRate / BORROW_RATE_PRECISION;
+        uint borrowRateFee = (_amount * borrowRate) / BORROW_RATE_PRECISION;
         uint amountPlusFee = _amount + borrowRateFee;
         totalDebt = totalDebt + amountPlusFee;
         userDebt[msg.sender] = userDebt[msg.sender] + amountPlusFee;
@@ -190,15 +196,22 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
      * @param _to the address that will receive the liquidated collateral
      * @param _swapper an optional implementation of the IFlashSwap interface to exchange the collateral for debt
      */
-    function liquidate(address _user, uint _maxAmount, uint _minCollateral, address _to, IFlashSwap _swapper) external override whenNotPaused{
+    function liquidate(
+        address _user,
+        uint _maxAmount,
+        uint _minCollateral,
+        address _to,
+        IFlashSwap _swapper
+    ) external override whenNotPaused {
         require(msg.sender != _user, "Market: cannot liquidate self");
 
         uint price = _updatePrice(true);
 
         require(!isUserSolvent(_user), "Market: user solvent");
 
-        uint userCollValue = (userCollateral[_user] * price) /  LAST_PRICE_PRECISION;
-        uint discountedCollateralValue = (userCollValue * (LIQUIDATION_PENALTY_PRECISION - liquidationPenalty)) / LIQUIDATION_PENALTY_PRECISION;
+        uint userCollValue = (userCollateral[_user] * price) / LAST_PRICE_PRECISION;
+        uint discountedCollateralValue = (userCollValue * (LIQUIDATION_PENALTY_PRECISION - liquidationPenalty)) /
+            LIQUIDATION_PENALTY_PRECISION;
         uint repayAmount = userDebt[_user] < _maxAmount ? userDebt[_user] : _maxAmount;
         uint liquidatedCollateral;
 
@@ -242,7 +255,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     }
 
     function checkPriceFrozen() private view {
-        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen");  // solhint-disable not-rely-on-time
+        require(block.timestamp - lastPriceTime <= ORACLE_MAX_TIMEOUT, "Market: frozen"); // solhint-disable not-rely-on-time
     }
 
     /**
@@ -259,7 +272,7 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
             lastPrice = price;
             lastPriceTime = block.timestamp;
             emit LastPriceUpdated(price);
-        } else if (_onFailCheckPriceFrozen){
+        } else if (_onFailCheckPriceFrozen) {
             checkPriceFrozen();
         }
         return lastPrice;
@@ -289,9 +302,9 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
      */
     function setPaused(bool _paused) external onlyOwner {
         if (_paused) {
-           _pause();
+            _pause();
         } else {
-           _unpause();
+            _unpause();
         }
     }
 
@@ -313,7 +326,8 @@ contract ZeroInterestMarket is Ownable, Initializable, IMarket, Pausable {
     function getUserLTV(address _user) public view override returns (uint) {
         if (userDebt[_user] == 0) return 0;
         if (userCollateral[_user] == 0) return type(uint256).max;
-        return userDebt[_user] * LOAN_TO_VALUE_PRECISION / (userCollateral[_user] * lastPrice / LAST_PRICE_PRECISION);
+        return
+            (userDebt[_user] * LOAN_TO_VALUE_PRECISION) / ((userCollateral[_user] * lastPrice) / LAST_PRICE_PRECISION);
     }
 
     function isUserSolvent(address _user) public view override returns (bool) {

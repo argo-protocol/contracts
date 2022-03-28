@@ -21,7 +21,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
- * @notice A Peg Stability Module (PSM) that allows swapping debtToken 1:1 for another 
+ * @notice A Peg Stability Module (PSM) that allows swapping debtToken 1:1 for another
  * stablecoin assesses a buy and sell fee on swaps. While fees are collected in both the
  * reserve and debt tokens, they are only harvested in debt tokens.
  */
@@ -36,11 +36,11 @@ contract PegStability is Ownable, IPSM {
     event BuyFeeUpdated(uint fee);
     event SellFeeUpdated(uint fee);
 
-    IERC20Metadata immutable public debtToken;
-    IERC20Metadata immutable public reserveToken;
+    IERC20Metadata public immutable debtToken;
+    IERC20Metadata public immutable reserveToken;
     uint256 public override buyFee;
     uint256 public override sellFee;
-    uint256 constant public override FEE_PRECISION = 1e5;
+    uint256 public constant override FEE_PRECISION = 1e5;
 
     uint256 public buyFeesCollected; // in reserve tokens
     uint256 public sellFeesCollected; // in debt tokens

@@ -15,7 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const DebtToken = await hre.ethers.getContractFactory("DebtToken");
     const debtToken = await DebtToken.attach(result.address);
-    if (await debtToken.owner() != operatorMultisig) {
+    if ((await debtToken.owner()) != operatorMultisig) {
         log("transfering ownership to operator multisig");
         await debtToken.transferOwnership(operatorMultisig);
     }

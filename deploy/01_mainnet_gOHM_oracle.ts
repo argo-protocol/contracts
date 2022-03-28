@@ -17,7 +17,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
                     18, // decimals
                     "OHMv2 / ETH", // description
                     4, // version
-                    "65632235192786370" // price
+                    "65632235192786370", // price
                 ],
                 log: true,
             });
@@ -27,11 +27,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         await deploy("gOhmOracle", {
             contract: "MainnetgOHMOracle",
             from: deployer,
-            args: [
-                config.gOHM,
-                config.ohmEthAggregator,
-                config.ethUsdAggregator
-            ],
+            args: [config.gOHM, config.ohmEthAggregator, config.ethUsdAggregator],
             log: true,
         });
     } else {

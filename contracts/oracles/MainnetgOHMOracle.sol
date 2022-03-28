@@ -12,7 +12,9 @@ interface IgOHM {
         @return amount of OHM
      */
     function balanceFrom(uint256 _amount) external view returns (uint256);
+
     function balanceTo(uint256 _amount) external view returns (uint256);
+
     function index() external view returns (uint);
 }
 
@@ -53,6 +55,6 @@ contract MainnetgOHMOracle is IOracle {
             return (false, 0);
         }
 
-         return (true, ((ohmEthPrice * ethUsdPrice / 1e18) * gOHM.index() / GOHM_PRECISION));
+        return (true, ((((ohmEthPrice * ethUsdPrice) / 1e18) * gOHM.index()) / GOHM_PRECISION));
     }
 }

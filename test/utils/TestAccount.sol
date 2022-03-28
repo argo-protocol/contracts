@@ -10,7 +10,11 @@ contract TestAccount {
     IMarket public market;
     IERC20 public debtToken;
 
-    constructor(string memory _name, address _market, address _debtToken) {
+    constructor(
+        string memory _name,
+        address _market,
+        address _debtToken
+    ) {
         name = _name;
         market = IMarket(_market);
         debtToken = IERC20(_debtToken);

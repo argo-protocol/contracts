@@ -78,7 +78,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     }
 
     /**
-     * @dev Returns the fee applied when doing flash loans. 
+     * @dev Returns the fee applied when doing flash loans.
      * @param _token The token to be flash loaned.
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
