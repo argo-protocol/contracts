@@ -219,4 +219,8 @@ describe("DebtToken", () => {
             });
         });
     });
+
+    it.only("bytes32 string", async () => {
+        console.log(ethers.utils.formatBytes32String("PriceOracle"));
+    });
 });

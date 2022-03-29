@@ -32,7 +32,7 @@ contract LiquidityBootstrap is Ownable, ReentrancyGuard, ILiquidityMigrator {
     ICurveGaugeV3 public immutable gauge;
 
     /// factory to create more rewards contracts
-    IRewardsPoolFactory rewardsFactory;
+    IRewardsPoolFactory private rewardsFactory;
     /// curve's max tokens is 8, and a 9th in case we want to use our own token
     uint256 public constant MAX_TOKENS = 8;
     /// tokens being offered by rewards
