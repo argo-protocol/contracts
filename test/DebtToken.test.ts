@@ -32,7 +32,38 @@ describe("DebtToken", () => {
         let token: DebtToken;
         beforeEach(async () => {
             token = await new DebtToken__factory(owner).deploy(treasury.address);
-            await token.grantRole(await token.MINTER_ROLE(), minter.address);
+            await token.addMinter(minter.address);
+        });
+
+        describe("roles", () => {
+            it("does not have DEFAULT_ADMIN_ROLE", async () => {
+                expect(await token.DEFAULT_ADMIN_ROLE()).to.eq(ethers.constants.HashZero);
+            });
+
+            it("owner is not a minter by default", async () => {
+                expect(await token.hasRole(await token.MINTER_ROLE(), owner.address)).to.be.false;
+            });
+
+            it("owner can add new minter", async () => {
+                await token.addMinter(other.address);
+                expect(await token.hasRole(await token.MINTER_ROLE(), other.address)).to.be.true;
+                await token.connect(other).mint(other.address, 1234);
+                expect(await token.balanceOf(other.address)).to.eq(1234);
+            });
+
+            it("owner can remove minter", async () => {
+                await token.removeMinter(minter.address);
+                await expect(token.mint(other.address, 1234)).to.revertedWith("AccessControl");
+            });
+
+            it("non-owner can't add or remove minter", async () => {
+                await expect(token.connect(other).addMinter(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
+                await expect(token.connect(other).removeMinter(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
+            });
         });
 
         describe("mint", () => {
@@ -43,7 +74,7 @@ describe("DebtToken", () => {
                 expect(await token.totalSupply()).to.equal(1234);
             });
 
-            it("can only be done by granted MINTER role", async () => {
+            it("can only be performed by granted MINTER role", async () => {
                 await expect(token.connect(owner).mint(other.address, 1234)).to.be.revertedWith("AccessControl");
             });
         });
@@ -185,7 +216,9 @@ describe("DebtToken", () => {
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setFlashFeeRate(100)).to.be.revertedWith("AccessControl");
+                await expect(token.connect(other).setFlashFeeRate(100)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
             });
 
             it("cannot set a rate greater than 100%", async () => {
@@ -203,7 +236,9 @@ describe("DebtToken", () => {
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setMaxFlashLoanAmount(100)).to.be.revertedWith("AccessControl");
+                await expect(token.connect(other).setMaxFlashLoanAmount(100)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
             });
         });
 
@@ -215,7 +250,9 @@ describe("DebtToken", () => {
             });
 
             it("can only be done by owner", async () => {
-                await expect(token.connect(other).setTreasury(other.address)).to.be.revertedWith("AccessControl");
+                await expect(token.connect(other).setTreasury(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
             });
 
             it("cannot be set to zero address", async () => {

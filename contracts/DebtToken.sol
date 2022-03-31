@@ -25,17 +25,14 @@ import { IDebtToken } from "./interfaces/IDebtToken.sol";
 /**
  * @notice A collateralized debt position token. Protocol assumes this is worth $1.
  */
-contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
-    bytes32 public constant OWNER_ROLE = keccak256("OWNER");
+contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLender {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER");
-
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint256 private maxFlashLoanAmount;
     uint256 private flashFeeRate;
     uint256 public feesCollected;
     uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
-    address private minter;
 
     event FlashFeeRateUpdated(uint256 newFlashFeeRate);
     event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
@@ -47,9 +44,6 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;
-
-        _setupRole(OWNER_ROLE, msg.sender);
-        _setRoleAdmin(MINTER_ROLE, OWNER_ROLE);
 
         emit TreasuryUpdated(treasury);
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
@@ -137,7 +131,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint256 _flashFeeRate) external onlyRole(OWNER_ROLE) {
+    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -147,7 +141,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
      * @notice sets the flash loan cap
      * @param _maxFlashLoanAmount the new amount
      */
-    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyRole(OWNER_ROLE) {
+    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyOwner {
         maxFlashLoanAmount = _maxFlashLoanAmount;
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
     }
@@ -156,7 +150,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
      * @notice updates the treasury (where fees are sent)
      * @param _treasury the new treasury
      */
-    function setTreasury(address _treasury) external onlyRole(OWNER_ROLE) {
+    function setTreasury(address _treasury) external onlyOwner {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
         treasury = _treasury;
         emit TreasuryUpdated(treasury);
@@ -172,5 +166,13 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, IERC3156FlashLender {
 
         // we burned the fee when we collected it
         _mint(treasury, fees);
+    }
+
+    function addMinter(address minter) public onlyOwner {
+        _grantRole(MINTER_ROLE, minter);
+    }
+
+    function removeMinter(address minter) public onlyOwner {
+        _revokeRole(MINTER_ROLE, minter);
     }
 }
