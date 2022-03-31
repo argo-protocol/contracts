@@ -18,24 +18,21 @@ pragma solidity ^0.8.0;
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { ILayerZeroReceiver } from "./interfaces/LayerZero/ILayerZeroReceiver.sol";
-import { ILayerZeroEndpoint } from "./interfaces/LayerZero/ILayerZeroEndpoint.sol";
+import { IDebtToken } from "./interfaces/IDebtToken.sol";
 
 /**
  * @notice A collateralized debt position token. Protocol assumes this is worth $1.
  */
-contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
+contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLender {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER");
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint256 private maxFlashLoanAmount;
     uint256 private flashFeeRate;
     uint256 public feesCollected;
     uint256 private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
-
-    mapping(uint16 => bytes) public lzRemotes;
-    ILayerZeroEndpoint public lzEndpoint;
-    address public lzAdmin;
 
     event FlashFeeRateUpdated(uint256 newFlashFeeRate);
     event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
@@ -47,7 +44,6 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;
-        lzAdmin = msg.sender;
 
         emit TreasuryUpdated(treasury);
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
@@ -59,7 +55,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint256 _amount) external onlyOwner {
+    function mint(address _to, uint256 _amount) external override onlyRole(MINTER_ROLE) {
         _mint(_to, _amount);
     }
 
@@ -67,7 +63,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint256 _amount) external {
+    function burn(uint256 _amount) external override {
         _burn(msg.sender, _amount);
     }
 
@@ -172,99 +168,11 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender, ILayerZeroReceiver {
         _mint(treasury, fees);
     }
 
-    ///////////
-    ///// LayerZero Omnichain Support
-    ///////////
-
-    /**
-     * @notice Send tokens to another chain.
-     * @param _chainId Remote chain where the tokens are going
-     * @param _dstOmniChainTokenAddr Address of token on remote chain
-     * @param _qty Quantity of tokens to send
-     */
-    function sendTokens(
-        uint16 _chainId,
-        bytes calldata _dstOmniChainTokenAddr,
-        uint256 _qty
-    ) public payable requireLayerZeroEnabled {
-        require(allowance(msg.sender, address(this)) >= _qty, "DebtToken: low allowance");
-        _burn(msg.sender, _qty);
-        bytes memory payload = abi.encode(msg.sender, _qty);
-
-        /* solhint-disable check-send-result */
-        lzEndpoint.send{ value: msg.value }(
-            _chainId,
-            _dstOmniChainTokenAddr,
-            payload,
-            payable(msg.sender),
-            address(0x0),
-            bytes("")
-        );
+    function addMinter(address minter) public onlyOwner {
+        _grantRole(MINTER_ROLE, minter);
     }
 
-    /**
-     * @notice LayerZero endpoint will invoke this function to deliver the message on the destination
-     * @param _srcChainId - the source endpoint identifier
-     * @param _srcAddress - the source sending contract address from the source chain
-     * @param - the ordered message nonce
-     * @param _payload - the signed payload is the UA bytes has encoded to be sent
-     */
-    function lzReceive(
-        uint16 _srcChainId,
-        bytes memory _srcAddress,
-        uint64,
-        bytes memory _payload
-    ) external override requireLayerZeroEnabled {
-        require(msg.sender == address(lzEndpoint), "DebtToken: lzReceive bad sender");
-        require(
-            _srcAddress.length == lzRemotes[_srcChainId].length &&
-                keccak256(_srcAddress) == keccak256(lzRemotes[_srcChainId]),
-            "DebtToken: lzReceive bad remote"
-        );
-        (address toAddr, uint256 qty) = abi.decode(_payload, (address, uint256));
-        _mint(toAddr, qty);
-    }
-
-    /**
-     * @notice The owner must set remote contract addresses
-     * @param _chainId The chainId for the remote contract
-     * @param _remoteAddress The contract address on the remote chainId
-     */
-    function setLayerZeroRemote(uint16 _chainId, bytes calldata _remoteAddress) external onlyLayerZeroAdmin {
-        lzRemotes[_chainId] = _remoteAddress;
-    }
-
-    /**
-     * @notice The owner must set remote contract addresses
-     * @dev Only settable by the lzAdmin address. Disable LayerZero by setting to 0x0.
-     * @param _endpoint The address of the ILayerZeroEndpoint contract
-     */
-    function setLayerZeroEndpoint(address _endpoint) public onlyLayerZeroAdmin {
-        lzEndpoint = ILayerZeroEndpoint(_endpoint);
-    }
-
-    /**
-     * @notice Allow the LayerZero admin to set a new LayerZero admin.
-     * @dev Effectively renounce ownership by setting to 0x0.
-     * @param _lzAdmin The new address of Layer Zero admin (lzAdmin).
-     */
-    function transferLayerZeroAdmin(address _lzAdmin) public onlyLayerZeroAdmin {
-        lzAdmin = _lzAdmin;
-    }
-
-    /**
-     * @notice Only allow the LayerZero admin.
-     */
-    modifier onlyLayerZeroAdmin() {
-        require(msg.sender == lzAdmin, "DebtToken: LZ admin required");
-        _;
-    }
-
-    /**
-     * @notice Only allow when lzEndpoint is set
-     */
-    modifier requireLayerZeroEnabled() {
-        require(address(lzEndpoint) != address(0), "DebtToken: LZ disabled");
-        _;
+    function removeMinter(address minter) public onlyOwner {
+        _revokeRole(MINTER_ROLE, minter);
     }
 }

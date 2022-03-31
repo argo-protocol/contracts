@@ -2,9 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { DebtToken, DebtToken__factory, TestFlashBorrower, TestFlashBorrower__factory } from "../typechain";
 import chai, { expect } from "chai";
 import { ethers } from "hardhat";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-import { ILayerZeroEndpoint } from "../typechain/ILayerZeroEndpoint";
-
+import { smock } from "@defi-wonderland/smock";
 chai.use(smock.matchers);
 
 const E18 = "000000000000000000";
@@ -13,10 +11,10 @@ describe("DebtToken", () => {
     let owner: SignerWithAddress;
     let treasury: SignerWithAddress;
     let other: SignerWithAddress;
-    let lzAdmin: SignerWithAddress;
+    let minter: SignerWithAddress;
 
     beforeEach(async () => {
-        [owner, treasury, other, lzAdmin] = await ethers.getSigners();
+        [owner, treasury, other, minter] = await ethers.getSigners();
     });
 
     describe("constructor", () => {
@@ -27,7 +25,6 @@ describe("DebtToken", () => {
             expect(await token.symbol()).to.equal("ARGO");
             expect(await token.decimals()).to.equal(18);
             expect(await token.totalSupply()).to.equal(0);
-            expect(await token.lzEndpoint()).to.equal(ethers.constants.AddressZero);
         });
     });
 
@@ -35,40 +32,70 @@ describe("DebtToken", () => {
         let token: DebtToken;
         beforeEach(async () => {
             token = await new DebtToken__factory(owner).deploy(treasury.address);
+            await token.addMinter(minter.address);
+        });
+
+        describe("roles", () => {
+            it("does not have DEFAULT_ADMIN_ROLE", async () => {
+                expect(await token.DEFAULT_ADMIN_ROLE()).to.eq(ethers.constants.HashZero);
+            });
+
+            it("owner is not a minter by default", async () => {
+                expect(await token.hasRole(await token.MINTER_ROLE(), owner.address)).to.be.false;
+            });
+
+            it("owner can add new minter", async () => {
+                await token.addMinter(other.address);
+                expect(await token.hasRole(await token.MINTER_ROLE(), other.address)).to.be.true;
+                await token.connect(other).mint(other.address, 1234);
+                expect(await token.balanceOf(other.address)).to.eq(1234);
+            });
+
+            it("owner can remove minter", async () => {
+                await token.removeMinter(minter.address);
+                await expect(token.mint(other.address, 1234)).to.revertedWith("AccessControl");
+            });
+
+            it("non-owner can't add or remove minter", async () => {
+                await expect(token.connect(other).addMinter(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
+                await expect(token.connect(other).removeMinter(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner'"
+                );
+            });
         });
 
         describe("mint", () => {
             it("mints the amount to the to address", async () => {
-                await token.connect(owner).mint(other.address, 1234);
+                await token.connect(minter).mint(other.address, 1234);
 
                 expect(await token.balanceOf(other.address)).to.equal(1234);
                 expect(await token.totalSupply()).to.equal(1234);
             });
 
-            it("can only be done by the owner", async () => {
-                await expect(token.connect(other).mint(other.address, 1234)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
-                );
+            it("can only be performed by granted MINTER role", async () => {
+                await expect(token.connect(owner).mint(other.address, 1234)).to.be.revertedWith("AccessControl");
             });
         });
 
         describe("burn", () => {
             it("burns the given amount of the token", async () => {
-                await token.connect(owner).mint(owner.address, 1234);
+                await token.connect(minter).mint(owner.address, 1234);
                 await token.connect(owner).burn(1234);
 
                 expect(await token.balanceOf(owner.address)).to.equal(0);
             });
 
             it("can be called by anyone", async () => {
-                await token.connect(owner).mint(other.address, 1234);
+                await token.connect(minter).mint(other.address, 1234);
                 await token.connect(other).burn(1234);
 
                 expect(await token.balanceOf(other.address)).to.equal(0);
             });
 
             it("reverts if burning more than balance", async () => {
-                await token.connect(owner).mint(other.address, 1234);
+                await token.connect(minter).mint(other.address, 1234);
                 await expect(token.connect(other).burn(1235)).to.be.revertedWith("ERC20: burn amount exceeds balance");
             });
         });
@@ -115,7 +142,7 @@ describe("DebtToken", () => {
             it("can allows flash loans", async () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `1${E18}`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
 
                 expect(await borrower.lastAmount()).to.equal(`1000${E18}`);
@@ -128,7 +155,7 @@ describe("DebtToken", () => {
             it("burns all flash loaned amount", async () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `1${E18}`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
 
                 expect(await token.totalSupply()).to.equal(0);
@@ -138,7 +165,7 @@ describe("DebtToken", () => {
                 const APPROVE_FEES = false;
                 const FEE_AMOUNT = `1${E18}`;
                 let borrower = await new TestFlashBorrower__factory(other).deploy(APPROVE_FEES);
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, `1000${E18}`, [])).to.be.revertedWith(
                     "allowance does not allow refund"
                 );
@@ -148,7 +175,7 @@ describe("DebtToken", () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `10000000${E18}`;
                 const BORROW_AMOUNT = `1000000000000000000000001`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, BORROW_AMOUNT, [])).to.be.revertedWith(
                     "DebtToken: amount above max"
                 );
@@ -165,7 +192,7 @@ describe("DebtToken", () => {
                 await token.connect(owner).setMaxFlashLoanAmount(MAX_FLASH_LOAN);
 
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
             });
 
@@ -190,7 +217,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setFlashFeeRate(100)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
+                    "Ownable: caller is not the owner'"
                 );
             });
 
@@ -210,7 +237,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setMaxFlashLoanAmount(100)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
+                    "Ownable: caller is not the owner'"
                 );
             });
         });
@@ -224,7 +251,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setTreasury(other.address)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
+                    "Ownable: caller is not the owner'"
                 );
             });
 
@@ -232,168 +259,6 @@ describe("DebtToken", () => {
                 await expect(token.connect(owner).setTreasury(ethers.constants.AddressZero)).to.be.revertedWith(
                     "DebtToken: 0x0 treasury address"
                 );
-            });
-        });
-
-        context.only("LayerZero", () => {
-            const REMOTE_CHAIN = 1020;
-            const REMOTE_ADDR = "0x90f79bf6eb2c4f870365e785982e1f101e93b906";
-            const QTY = 1000;
-
-            let lzEndpoint: FakeContract<ILayerZeroEndpoint>;
-            beforeEach(async () => {
-                lzEndpoint = await smock.fake<ILayerZeroEndpoint>("ILayerZeroEndpoint");
-            });
-
-            describe("admin", () => {
-                it("starts as initial owner", async () => {
-                    expect(await token.lzAdmin()).to.eq(owner.address);
-                });
-
-                it("is transferrable by current admin", async () => {
-                    await token.transferLayerZeroAdmin(other.address);
-                    expect(await token.lzAdmin()).to.eq(other.address);
-                });
-
-                it("required to transfer admin role", async () => {
-                    await expect(token.connect(other).transferLayerZeroAdmin(lzAdmin.address)).to.be.revertedWith(
-                        "DebtToken: LZ admin required"
-                    );
-                });
-
-                it("can renounce by transferring to 0x0", async () => {
-                    await token.transferLayerZeroAdmin(ethers.constants.AddressZero);
-                    expect(await token.lzAdmin()).to.eq(ethers.constants.AddressZero);
-                    await expect(token.connect(other).transferLayerZeroAdmin(lzAdmin.address)).to.be.revertedWith(
-                        "DebtToken: LZ admin required"
-                    );
-                });
-            });
-
-            describe("not enabled", () => {
-                it("reverts when sending", async () => {
-                    await expect(token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY)).to.be.revertedWith(
-                        "DebtToken: LZ disabled"
-                    );
-                });
-
-                it("reverts when receiving", async () => {
-                    await expect(
-                        token
-                            .connect(lzEndpoint.wallet)
-                            .lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, ethers.utils.defaultAbiCoder.encode([], []))
-                    ).to.be.revertedWith("DebtToken: LZ disabled");
-                });
-            });
-
-            describe("enabled", () => {
-                beforeEach(async () => {
-                    await token.setLayerZeroEndpoint(lzEndpoint.address);
-                    await token.transferLayerZeroAdmin(lzAdmin.address);
-                });
-
-                describe("sendTokens", () => {
-                    it("requires sufficient allowance", async () => {
-                        await expect(
-                            token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY)
-                        ).to.be.revertedWith("DebtToken: low allowance");
-                    });
-
-                    it("sends to endpoint", async () => {
-                        await token.connect(owner).mint(other.address, QTY);
-                        await token.connect(other).approve(token.address, QTY);
-
-                        await token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY);
-
-                        expect(await token.balanceOf(other.address)).to.eq(0);
-
-                        const expectedPayload = ethers.utils.defaultAbiCoder.encode(
-                            ["address", "uint256"],
-                            [other.address, QTY]
-                        );
-                        expect(lzEndpoint.send).to.be.calledWith(
-                            REMOTE_CHAIN,
-                            REMOTE_ADDR,
-                            expectedPayload,
-                            other.address,
-                            ethers.constants.AddressZero,
-                            "0x"
-                        );
-                    });
-
-                    it("succeeds even if admin is 0x0", async () => {
-                        await token.connect(lzAdmin).transferLayerZeroAdmin(ethers.constants.AddressZero);
-                        await token.connect(owner).mint(other.address, QTY);
-                        await token.connect(other).approve(token.address, QTY);
-                        await token.connect(other).sendTokens(REMOTE_CHAIN, REMOTE_ADDR, QTY);
-                        expect(await token.balanceOf(other.address)).to.eq(0);
-                    });
-                });
-
-                describe("setLZRemote", () => {
-                    it("requires admin", async () => {
-                        await expect(
-                            token.connect(other).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR)
-                        ).to.be.revertedWith("DebtToken: LZ admin required");
-                    });
-
-                    it("admin can set key-value", async () => {
-                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                        expect(await token.lzRemotes(REMOTE_CHAIN)).to.eq(REMOTE_ADDR);
-                    });
-
-                    it("admin can set repeatedly", async () => {
-                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                        await expect(token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR)).not.to.be
-                            .reverted;
-                    });
-                });
-
-                describe("lzReceive", () => {
-                    let payload: string;
-
-                    beforeEach(async () => {
-                        payload = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [other.address, QTY]);
-                        // fund the endpoint contract
-                        await owner.sendTransaction({
-                            to: lzEndpoint.address,
-                            value: ethers.utils.parseEther("1.0"),
-                        });
-                    });
-
-                    it("reverts if not called by endpoint", async () => {
-                        await expect(
-                            token.connect(owner).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
-                        ).to.be.revertedWith("DebtToken: lzReceive bad sender");
-                    });
-
-                    it("reverts if remote not set", async () => {
-                        await expect(
-                            token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
-                        ).to.be.revertedWith("DebtToken: lzReceive bad remote");
-                    });
-
-                    it("reverts if called with incorrect remote address", async () => {
-                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                        await expect(
-                            token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, other.address, 0, payload)
-                        ).to.be.revertedWith("DebtToken: lzReceive bad remote");
-                    });
-
-                    it("increases balance of payload address by payload amount", async () => {
-                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                        await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
-
-                        expect(await token.balanceOf(other.address)).to.eq(QTY);
-                    });
-
-                    it("receives even if admin is 0x0", async () => {
-                        await token.connect(lzAdmin).setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
-                        await token.connect(lzAdmin).transferLayerZeroAdmin(ethers.constants.AddressZero);
-                        await token.connect(lzEndpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload);
-                        expect(await token.balanceOf(other.address)).to.eq(QTY);
-                    });
-                });
             });
         });
     });
