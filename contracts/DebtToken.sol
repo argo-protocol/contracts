@@ -18,12 +18,15 @@ pragma solidity ^0.8.0;
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
+import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IDebtToken } from "./interfaces/IDebtToken.sol";
 
 /**
  * @notice A collateralized debt position token. Protocol assumes this is worth $1.
  */
-contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
+contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLender {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER");
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint private maxFlashLoanAmount;
     uint private flashFeeRate;
@@ -52,7 +55,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint _amount) external onlyOwner {
+    function mint(address _to, uint _amount) external override onlyRole(MINTER_ROLE) {
         _mint(_to, _amount);
     }
 
@@ -60,7 +63,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint _amount) external {
+    function burn(uint _amount) external override {
         _burn(msg.sender, _amount);
     }
 
@@ -71,7 +74,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     /**
      * @dev Returns the maximum amount of tokens available for loan.
      * @param _token The address of the token that is requested.
-     * @return The amont of token that can be loaned.
+     * @return The amount of token that can be loaned.
      */
     function maxFlashLoan(address _token) public view override returns (uint) {
         return _token == address(this) ? maxFlashLoanAmount : 0;
@@ -128,7 +131,7 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -163,5 +166,13 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
 
         // we burned the fee when we collected it
         _mint(treasury, fees);
+    }
+
+    function addMinter(address minter) public onlyOwner {
+        _grantRole(MINTER_ROLE, minter);
+    }
+
+    function removeMinter(address minter) public onlyOwner {
+        _revokeRole(MINTER_ROLE, minter);
     }
 }

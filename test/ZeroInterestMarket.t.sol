@@ -17,14 +17,15 @@ contract ZeroInterestMarketTest is DSTest {
     ERC20Mock public collateralToken;
     DebtToken public debtToken;
     StubOracle public oracle;
-    uint public constant MAX_LTV = 50000;
-    uint public constant BORROW_FEE = 1500;
+    uint256 public constant MAX_LTV = 50000;
+    uint256 public constant BORROW_FEE = 1500;
 
     function setUp() public {
         owner = new TestAccount("owner", address(0), address(0));
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
         debtToken = new DebtToken(address(treasury));
+        debtToken.addMinter(address(owner));
         oracle = new StubOracle();
         market = new ZeroInterestMarket();
         market.initialize(
@@ -44,17 +45,18 @@ contract ZeroInterestMarketTest is DSTest {
     //// FUZZ TESTS
     /////////
 
-    function testBorrowMaintainsLTV(uint _price, uint _borrowAmount) public {
+    function testBorrowMaintainsLTV(uint256 _price, uint256 _borrowAmount) public {
         if (_borrowAmount > 1e40) return;
         if (_price > 1e40) return;
         if (_price < 1e5) return;
 
-        uint debtAmount = _borrowAmount + ((_borrowAmount * BORROW_FEE) / market.BORROW_RATE_PRECISION());
+        uint256 debtAmount = _borrowAmount + ((_borrowAmount * BORROW_FEE) / market.BORROW_RATE_PRECISION());
+        debtToken.addMinter(address(this));
         debtToken.mint(address(market), debtAmount);
         oracle.setPrice(_price);
         collateralToken.approve(address(market), 1e18);
 
-        uint ltv = (debtAmount * market.LOAN_TO_VALUE_PRECISION()) / _price;
+        uint256 ltv = (debtAmount * market.LOAN_TO_VALUE_PRECISION()) / _price;
 
         if (ltv <= MAX_LTV) {
             market.depositAndBorrow(1e18, _borrowAmount);
@@ -70,15 +72,16 @@ contract ZeroInterestMarketTest is DSTest {
         }
     }
 
-    function testLiquidateAlwaysProfitableForLiquidator(uint _newPrice, uint _repayAmount) public {
+    function testLiquidateAlwaysProfitableForLiquidator(uint256 _newPrice, uint256 _repayAmount) public {
         if (_newPrice > 1e60) return;
         if (_newPrice > 1e5) return;
         if (_repayAmount > 1e60) return;
         if (_repayAmount < 1e5) return;
 
-        uint initialPrice = 100000e18; // $100,000
-        uint borrowAmount = 45000e18;
+        uint256 initialPrice = 100000e18; // $100,000
+        uint256 borrowAmount = 45000e18;
 
+        debtToken.addMinter(address(this));
         debtToken.mint(address(liquidator), _repayAmount);
         debtToken.mint(address(market), 60000e18);
         oracle.setPrice(initialPrice);

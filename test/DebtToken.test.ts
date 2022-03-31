@@ -1,7 +1,9 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { DebtToken, DebtToken__factory, TestFlashBorrower, TestFlashBorrower__factory } from "../typechain";
-import { expect } from "chai";
+import chai, { expect } from "chai";
 import { ethers } from "hardhat";
+import { smock } from "@defi-wonderland/smock";
+chai.use(smock.matchers);
 
 const E18 = "000000000000000000";
 
@@ -9,9 +11,10 @@ describe("DebtToken", () => {
     let owner: SignerWithAddress;
     let treasury: SignerWithAddress;
     let other: SignerWithAddress;
+    let minter: SignerWithAddress;
 
     beforeEach(async () => {
-        [owner, treasury, other] = await ethers.getSigners();
+        [owner, treasury, other, minter] = await ethers.getSigners();
     });
 
     describe("constructor", () => {
@@ -29,40 +32,70 @@ describe("DebtToken", () => {
         let token: DebtToken;
         beforeEach(async () => {
             token = await new DebtToken__factory(owner).deploy(treasury.address);
+            await token.addMinter(minter.address);
         });
 
-        describe("mint", () => {
-            it("mints the amount to the to address", async () => {
-                await token.connect(owner).mint(other.address, 1234);
-
-                expect(await token.balanceOf(other.address)).to.equal(1234);
-                expect(await token.totalSupply()).to.equal(1234);
+        describe("roles", () => {
+            it("does not have DEFAULT_ADMIN_ROLE", async () => {
+                expect(await token.DEFAULT_ADMIN_ROLE()).to.eq(ethers.constants.HashZero);
             });
 
-            it("can only be done by the owner", async () => {
-                await expect(token.connect(other).mint(other.address, 1234)).to.be.revertedWith(
+            it("owner is not a minter by default", async () => {
+                expect(await token.hasRole(await token.MINTER_ROLE(), owner.address)).to.be.false;
+            });
+
+            it("owner can add new minter", async () => {
+                await token.addMinter(other.address);
+                expect(await token.hasRole(await token.MINTER_ROLE(), other.address)).to.be.true;
+                await token.connect(other).mint(other.address, 1234);
+                expect(await token.balanceOf(other.address)).to.eq(1234);
+            });
+
+            it("owner can remove minter", async () => {
+                await token.removeMinter(minter.address);
+                await expect(token.mint(other.address, 1234)).to.revertedWith("AccessControl");
+            });
+
+            it("non-owner can't add or remove minter", async () => {
+                await expect(token.connect(other).addMinter(other.address)).to.be.revertedWith(
+                    "Ownable: caller is not the owner"
+                );
+                await expect(token.connect(other).removeMinter(other.address)).to.be.revertedWith(
                     "Ownable: caller is not the owner"
                 );
             });
         });
 
+        describe("mint", () => {
+            it("mints the amount to the to address", async () => {
+                await token.connect(minter).mint(other.address, 1234);
+
+                expect(await token.balanceOf(other.address)).to.equal(1234);
+                expect(await token.totalSupply()).to.equal(1234);
+            });
+
+            it("can only be performed by granted MINTER role", async () => {
+                await expect(token.connect(owner).mint(other.address, 1234)).to.be.revertedWith("AccessControl");
+            });
+        });
+
         describe("burn", () => {
             it("burns the given amount of the token", async () => {
-                await token.connect(owner).mint(owner.address, 1234);
+                await token.connect(minter).mint(owner.address, 1234);
                 await token.connect(owner).burn(1234);
 
                 expect(await token.balanceOf(owner.address)).to.equal(0);
             });
 
             it("can be called by anyone", async () => {
-                await token.connect(owner).mint(other.address, 1234);
+                await token.connect(minter).mint(other.address, 1234);
                 await token.connect(other).burn(1234);
 
                 expect(await token.balanceOf(other.address)).to.equal(0);
             });
 
             it("reverts if burning more than balance", async () => {
-                await token.connect(owner).mint(other.address, 1234);
+                await token.connect(minter).mint(other.address, 1234);
                 await expect(token.connect(other).burn(1235)).to.be.revertedWith("ERC20: burn amount exceeds balance");
             });
         });
@@ -109,7 +142,7 @@ describe("DebtToken", () => {
             it("can allows flash loans", async () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `1${E18}`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
 
                 expect(await borrower.lastAmount()).to.equal(`1000${E18}`);
@@ -122,7 +155,7 @@ describe("DebtToken", () => {
             it("burns all flash loaned amount", async () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `1${E18}`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
 
                 expect(await token.totalSupply()).to.equal(0);
@@ -132,7 +165,7 @@ describe("DebtToken", () => {
                 const APPROVE_FEES = false;
                 const FEE_AMOUNT = `1${E18}`;
                 let borrower = await new TestFlashBorrower__factory(other).deploy(APPROVE_FEES);
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, `1000${E18}`, [])).to.be.revertedWith(
                     "allowance does not allow refund"
                 );
@@ -142,7 +175,7 @@ describe("DebtToken", () => {
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
                 const FEE_AMOUNT = `10000000${E18}`;
                 const BORROW_AMOUNT = `1000000000000000000000001`;
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await expect(token.flashLoan(borrower.address, token.address, BORROW_AMOUNT, [])).to.be.revertedWith(
                     "DebtToken: amount above max"
                 );
@@ -159,7 +192,7 @@ describe("DebtToken", () => {
                 await token.connect(owner).setMaxFlashLoanAmount(MAX_FLASH_LOAN);
 
                 let borrower = await new TestFlashBorrower__factory(other).deploy(true);
-                await token.mint(borrower.address, FEE_AMOUNT);
+                await token.connect(minter).mint(borrower.address, FEE_AMOUNT);
                 await token.flashLoan(borrower.address, token.address, `1000${E18}`, []);
             });
 
@@ -184,7 +217,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setFlashFeeRate(100)).to.be.revertedWith(
-                    "Ownable: caller is not the owner"
+                    "Ownable: caller is not the owner'"
                 );
             });
 
