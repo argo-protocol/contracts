@@ -6,7 +6,6 @@ import { FakeContract, smock } from "@defi-wonderland/smock";
 
 chai.use(smock.matchers);
 
-
 async function fork_network(blockNumber = 13955627) {
     /// Use mainnet fork as provider
     return network.provider.request({
@@ -41,9 +40,7 @@ describe("MainnetstEthOracle", () => {
 
             [owner] = await ethers.getSigners();
 
-            oracle = await new MainnetChainlinkOracle__factory(owner).deploy(
-                STETH_USD_ADDRESS
-            );
+            oracle = await new MainnetChainlinkOracle__factory(owner).deploy(STETH_USD_ADDRESS);
         });
 
         after(async () => {
@@ -51,13 +48,12 @@ describe("MainnetstEthOracle", () => {
         });
 
         it("can fetch the current price", async () => {
-            
             let [success, price] = await oracle.fetchPrice();
             expect(success).to.be.true;
             //on jan 6 at 1800 PST (time of the block at 13955627)
             //eth ~= 3392
             //steth ~= 3374 (from coingecko)
-            expect(price).to.equal("3375053672360000000000")
+            expect(price).to.equal("3375053672360000000000");
         });
     });
 });

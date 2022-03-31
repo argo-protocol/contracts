@@ -18,11 +18,11 @@ interface IOlympusStaking {
 
 interface IUniswapRouter02 {
     function swapExactTokensForTokens(
-    uint amountIn,
-    uint amountOutMin,
-    address[] calldata path,
-    address to,
-    uint deadline
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
     ) external returns (uint[] memory amounts);
 }
 
@@ -102,7 +102,7 @@ contract MainnetgOhmLiquidatorV1 is IFlashSwap {
 
         // use PSM for DAI -> oUSD
         IERC20(dai).approve(address(psm), amounts[1]);
-        uint256 oUsdToBuy = amounts[1] * (psm.FEE_PRECISION() - psm.buyFee()) / psm.FEE_PRECISION();
+        uint256 oUsdToBuy = (amounts[1] * (psm.FEE_PRECISION() - psm.buyFee())) / psm.FEE_PRECISION();
         psm.buy(oUsdToBuy);
 
         // approve oUSD _minRepayAmount to liquidate
@@ -111,6 +111,6 @@ contract MainnetgOhmLiquidatorV1 is IFlashSwap {
         // transfer the profit to _recipient
         uint256 balance = _debtToken.balanceOf(address(this));
         require(balance - _minRepayAmount >= tmpDesiredProfit, "unprofitable");
-        _debtToken.transfer(tmpRecipient,  balance - _minRepayAmount);
+        _debtToken.transfer(tmpRecipient, balance - _minRepayAmount);
     }
 }

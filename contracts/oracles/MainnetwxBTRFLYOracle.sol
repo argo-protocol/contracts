@@ -79,7 +79,7 @@ contract MainnetwxBTRFLYOracle is IOracle {
         }
 
         uint256 btrflyUsdPrice = (btrflyOhmPrice * ohmEthPrice * ethUsdPrice); //1e18 for ohmEthPrice, 1e18 for ethUsdPrice, 1e9 for btrflyOhm
-    
+
         return (true, btrflyUsdPrice / wxBTRFLY.wBTRFLYValue(1e9) / 1e9);
     }
 }

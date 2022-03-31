@@ -9,8 +9,8 @@
     "deploy": "hardhat deploy:Greeter",
     "lint": "solhint --config ./.solhint.json --max-warnings 0 \"contracts/**/*.sol\"",
     "typechain": "hardhat typechain",
-    "prettier:check": "prettier --check \"{contracts/**/*.sol,test/**/*.js,**/*.ts}\"",
-    "prettier": "prettier --write \"{contracts/**/*.sol,test/**/*.js,**/*.ts}\""
+    "prettier:check": "prettier --check \"**/*.{js,ts,sol,yml,json}\"",
+    "prettier": "prettier --write \"**/*.{js,ts,sol,yml,json}\""
   },
   "devDependencies": {
     "@defi-wonderland/smock": "^2.0.7",

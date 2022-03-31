@@ -56,7 +56,7 @@ contract ZeroInterestMarketTest is DSTest {
         oracle.setPrice(_price);
         collateralToken.approve(address(market), 1e18);
 
-        uint256 ltv = (debtAmount * market.LOAN_TO_VALUE_PRECISION()) / _price;
+        uint ltv = (debtAmount * market.LOAN_TO_VALUE_PRECISION()) / _price;
 
         if (ltv <= MAX_LTV) {
             market.depositAndBorrow(1e18, _borrowAmount);
@@ -93,9 +93,9 @@ contract ZeroInterestMarketTest is DSTest {
         if (_newPrice < 90000e18) {
             // this will cause a liquidation
             liquidator.liquidate(address(this), _repayAmount);
-            uint256 valueOfLiqAssets = (collateralToken.balanceOf(address(liquidator)) * _newPrice) /
+            uint valueOfLiqAssets = (collateralToken.balanceOf(address(liquidator)) * _newPrice) /
                 market.LAST_PRICE_PRECISION();
-            uint256 amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
+            uint amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
             assertGt(valueOfLiqAssets, amountPaid);
         } else {
             // revert for not liquidating

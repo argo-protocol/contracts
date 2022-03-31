@@ -58,10 +58,10 @@ describe("DebtToken", () => {
 
             it("non-owner can't add or remove minter", async () => {
                 await expect(token.connect(other).addMinter(other.address)).to.be.revertedWith(
-                    "Ownable: caller is not the owner'"
+                    "Ownable: caller is not the owner"
                 );
                 await expect(token.connect(other).removeMinter(other.address)).to.be.revertedWith(
-                    "Ownable: caller is not the owner'"
+                    "Ownable: caller is not the owner"
                 );
             });
         });
@@ -237,7 +237,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setMaxFlashLoanAmount(100)).to.be.revertedWith(
-                    "Ownable: caller is not the owner'"
+                    "Ownable: caller is not the owner"
                 );
             });
         });
@@ -251,7 +251,7 @@ describe("DebtToken", () => {
 
             it("can only be done by owner", async () => {
                 await expect(token.connect(other).setTreasury(other.address)).to.be.revertedWith(
-                    "Ownable: caller is not the owner'"
+                    "Ownable: caller is not the owner"
                 );
             });
 

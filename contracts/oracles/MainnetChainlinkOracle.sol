@@ -13,16 +13,14 @@ contract MainnetChainlinkOracle is IOracle {
 
     AggregatorV3Interface private chainlinkUsdFeed;
 
-    constructor(        
-        address _chainlinkUsdFeed
-    ) {
+    constructor(address _chainlinkUsdFeed) {
         require(_chainlinkUsdFeed != address(0), "Oracle: 0x0 chainlink address");
 
-        chainlinkUsdFeed = AggregatorV3Interface(_chainlinkUsdFeed);        
+        chainlinkUsdFeed = AggregatorV3Interface(_chainlinkUsdFeed);
     }
 
     /**
-     * @notice fetches the latest price     
+     * @notice fetches the latest price
      * @return the price with 18 decimals
      */
     function fetchPrice() external view override returns (bool, uint256) {
@@ -31,7 +29,7 @@ contract MainnetChainlinkOracle is IOracle {
         if (!success) {
             return (false, 0);
         }
-                     
+
         return (true, price);
     }
 }

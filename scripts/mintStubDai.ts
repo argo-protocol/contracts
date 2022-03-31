@@ -25,10 +25,10 @@ async function main() {
     const deployment = await hre.deployments.get("StubDai");
     const stubDai = (await hre.ethers.getContractAt("ERC20Mock", deployment.address)).connect(signer);
 
-    const tx = await stubDai.mint(argv.address,  argv.amount);
+    const tx = await stubDai.mint(argv.address, argv.amount);
     await tx.wait();
- 
-    console.log(`${argv.address} balance is now ${await stubDai.balanceOf(argv.address)}`)
+
+    console.log(`${argv.address} balance is now ${await stubDai.balanceOf(argv.address)}`);
 }
 
 main()

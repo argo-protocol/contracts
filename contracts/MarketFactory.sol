@@ -41,7 +41,16 @@ contract MarketFactory is Ownable {
         require(owner_ != address(0), "0x0 owner address");
 
         zeroInterestMarketImpl = new ZeroInterestMarket();
-        zeroInterestMarketImpl.initialize(address(0x0), address(0x0), address(0x0), address(0x0), address(0x0), 0, 0, 0);
+        zeroInterestMarketImpl.initialize(
+            address(0x0),
+            address(0x0),
+            address(0x0),
+            address(0x0),
+            address(0x0),
+            0,
+            0,
+            0
+        );
         transferOwnership(owner_);
     }
 
@@ -87,5 +96,9 @@ contract MarketFactory is Ownable {
 
     function numMarkets() public view returns (uint256) {
         return markets.length;
+    }
+
+    function getMarkets() public view returns (IMarket[] memory) {
+        return markets;
     }
 }

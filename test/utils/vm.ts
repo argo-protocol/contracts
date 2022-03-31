@@ -24,9 +24,9 @@ export async function forkReset() {
 }
 
 export async function impersonate(address: string): Promise<SignerWithAddress> {
-     await network.provider.request({
+    await network.provider.request({
         method: "hardhat_impersonateAccount",
-        params: [address]
+        params: [address],
     });
-    return await ethers.getSigner(address); 
+    return await ethers.getSigner(address);
 }
