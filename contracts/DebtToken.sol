@@ -86,7 +86,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
      */
-    function flashFee(address _token, uint _amount) public view override returns (uint) {
+    function flashFee(address _token, uint256 _amount) public view override returns (uint256) {
         require(_token == address(this), "ERC20FlashMint: wrong token");
         return (_amount * flashFeeRate) / FLASH_FEE_PRECISION;
     }
@@ -108,17 +108,17 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
     function flashLoan(
         IERC3156FlashBorrower receiver,
         address token,
-        uint amount,
+        uint256 amount,
         bytes calldata data
     ) public override returns (bool) {
         require(amount <= maxFlashLoanAmount, "DebtToken: amount above max");
-        uint fee = flashFee(token, amount);
+        uint256 fee = flashFee(token, amount);
         _mint(address(receiver), amount);
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
             "DebtToken: invalid return value"
         );
-        uint currentAllowance = allowance(address(receiver), address(this));
+        uint256 currentAllowance = allowance(address(receiver), address(this));
         require(currentAllowance >= amount + fee, "allowance does not allow refund");
         _approve(address(receiver), address(this), currentAllowance - amount - fee);
         // save gas by burning the fee collected, will mint it again when harvesting
@@ -131,7 +131,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
