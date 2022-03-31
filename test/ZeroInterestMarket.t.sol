@@ -51,6 +51,7 @@ contract ZeroInterestMarketTest is DSTest {
         if (_price < 1e5) return;
 
         uint256 debtAmount = _borrowAmount + ((_borrowAmount * BORROW_FEE) / market.BORROW_RATE_PRECISION());
+        debtToken.addMinter(address(this));
         debtToken.mint(address(market), debtAmount);
         oracle.setPrice(_price);
         collateralToken.approve(address(market), 1e18);
@@ -80,6 +81,7 @@ contract ZeroInterestMarketTest is DSTest {
         uint256 initialPrice = 100000e18; // $100,000
         uint256 borrowAmount = 45000e18;
 
+        debtToken.addMinter(address(this));
         debtToken.mint(address(liquidator), _repayAmount);
         debtToken.mint(address(market), 60000e18);
         oracle.setPrice(initialPrice);
