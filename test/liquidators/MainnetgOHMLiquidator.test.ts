@@ -68,6 +68,7 @@ describe("MainnetgOhmLiquidator", () => {
             250, // sell fee 0.25%
             owner.address
         );
+        await debtToken.addMinter(owner.address);
         await debtToken.mint(market.address, `10000000${E18}`);
         await debtToken.mint(psm.address, `10000000${E18}`);
 
