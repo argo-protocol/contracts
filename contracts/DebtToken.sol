@@ -28,16 +28,16 @@ import { IDebtToken } from "./interfaces/IDebtToken.sol";
 contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLender {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER");
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint256 private maxFlashLoanAmount;
-    uint256 private flashFeeRate;
-    uint256 public feesCollected;
-    uint256 private constant FLASH_FEE_PRECISION = 1e5;
+    uint private maxFlashLoanAmount;
+    uint private flashFeeRate;
+    uint public feesCollected;
+    uint private constant FLASH_FEE_PRECISION = 1e5;
     address private treasury;
 
-    event FlashFeeRateUpdated(uint256 newFlashFeeRate);
-    event MaxFlashLoanAmountUpdated(uint256 newMaxFlashLoanAmount);
+    event FlashFeeRateUpdated(uint newFlashFeeRate);
+    event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
     event TreasuryUpdated(address newTreasury);
-    event FeesHarvested(uint256 fees);
+    event FeesHarvested(uint fees);
 
     constructor(address _treasury) ERC20("Argo Stablecoin", "ARGO") {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
@@ -55,7 +55,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @param _to address to receive the tokens
      * @param _amount number of tokens to recieve
      */
-    function mint(address _to, uint256 _amount) external override onlyRole(MINTER_ROLE) {
+    function mint(address _to, uint _amount) external override onlyRole(MINTER_ROLE) {
         _mint(_to, _amount);
     }
 
@@ -63,7 +63,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @notice burns _amount of msg.sender's tokens
      * @param _amount number of tokens to burn
      */
-    function burn(uint256 _amount) external override {
+    function burn(uint _amount) external override {
         _burn(msg.sender, _amount);
     }
 
@@ -76,7 +76,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @param _token The address of the token that is requested.
      * @return The amount of token that can be loaned.
      */
-    function maxFlashLoan(address _token) public view override returns (uint256) {
+    function maxFlashLoan(address _token) public view override returns (uint) {
         return _token == address(this) ? maxFlashLoanAmount : 0;
     }
 
@@ -86,7 +86,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @param _amount The amount of tokens to be loaned.
      * @return The fees applied to the corresponding flash loan.
      */
-    function flashFee(address _token, uint256 _amount) public view override returns (uint256) {
+    function flashFee(address _token, uint _amount) public view override returns (uint) {
         require(_token == address(this), "ERC20FlashMint: wrong token");
         return (_amount * flashFeeRate) / FLASH_FEE_PRECISION;
     }
@@ -108,17 +108,17 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
     function flashLoan(
         IERC3156FlashBorrower receiver,
         address token,
-        uint256 amount,
+        uint amount,
         bytes calldata data
     ) public override returns (bool) {
         require(amount <= maxFlashLoanAmount, "DebtToken: amount above max");
-        uint256 fee = flashFee(token, amount);
+        uint fee = flashFee(token, amount);
         _mint(address(receiver), amount);
         require(
             receiver.onFlashLoan(msg.sender, token, amount, fee, data) == _RETURN_VALUE,
             "DebtToken: invalid return value"
         );
-        uint256 currentAllowance = allowance(address(receiver), address(this));
+        uint currentAllowance = allowance(address(receiver), address(this));
         require(currentAllowance >= amount + fee, "allowance does not allow refund");
         _approve(address(receiver), address(this), currentAllowance - amount - fee);
         // save gas by burning the fee collected, will mint it again when harvesting
@@ -131,7 +131,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @notice sets the flash fee rate with precision of 1e5, eg 100 == 0.1%
      * @param _flashFeeRate the new rate
      */
-    function setFlashFeeRate(uint256 _flashFeeRate) external onlyOwner {
+    function setFlashFeeRate(uint _flashFeeRate) external onlyOwner {
         require(_flashFeeRate < FLASH_FEE_PRECISION, "DebtToken: rate too high");
         flashFeeRate = _flashFeeRate;
         emit FlashFeeRateUpdated(flashFeeRate);
@@ -141,7 +141,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @notice sets the flash loan cap
      * @param _maxFlashLoanAmount the new amount
      */
-    function setMaxFlashLoanAmount(uint256 _maxFlashLoanAmount) external onlyOwner {
+    function setMaxFlashLoanAmount(uint _maxFlashLoanAmount) external onlyOwner {
         maxFlashLoanAmount = _maxFlashLoanAmount;
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);
     }
@@ -160,7 +160,7 @@ contract DebtToken is IDebtToken, ERC20, AccessControl, Ownable, IERC3156FlashLe
      * @notice harvests fees from flash loans to the treasury
      */
     function harvestFees() external {
-        uint256 fees = feesCollected;
+        uint fees = feesCollected;
         feesCollected = 0;
         emit FeesHarvested(fees);
 
