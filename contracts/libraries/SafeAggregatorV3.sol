@@ -5,6 +5,7 @@ import { AggregatorV3Interface } from "../interfaces/AggregatorV3Interface.sol";
 
 library SafeAggregatorV3 {
     uint private constant TARGET_DECIMALS = 18;
+
     /**
      * @notice returns  the latest price from a chainlink feed
      * @return boolean if call was successful
@@ -19,12 +20,11 @@ library SafeAggregatorV3 {
             return (false, 0);
         }
 
-        try self.latestRoundData() returns
-        (
-            uint80 /* currentRoundId */,
+        try self.latestRoundData() returns (
+            uint80, /* currentRoundId */
             int256 currentPrice,
-            uint256 /* startedAt */,
-            uint256 /* timestamp */,
+            uint256, /* startedAt */
+            uint256, /* timestamp */
             uint80 /* answeredInRound */
         ) {
             uint price = uint(currentPrice);

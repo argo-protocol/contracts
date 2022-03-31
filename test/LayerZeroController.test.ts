@@ -117,19 +117,19 @@ context("LayerZeroController", () => {
             });
             it("reverts if not called by endpoint", async () => {
                 await expect(controller.lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)).to.be.revertedWith(
-                    "DebtToken: lzReceive bad sender"
+                    "LZC: lzReceive bad sender"
                 );
             });
             it("reverts if remote not set", async () => {
                 await expect(
                     controller.connect(endpoint.wallet).lzReceive(REMOTE_CHAIN, REMOTE_ADDR, 0, payload)
-                ).to.be.revertedWith("DebtToken: lzReceive bad remote");
+                ).to.be.revertedWith("LZC: lzReceive bad remote");
             });
             it("reverts if called with incorrect remote address", async () => {
                 await controller.setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);
                 await expect(
                     controller.connect(endpoint.wallet).lzReceive(REMOTE_CHAIN, other.address, 0, payload)
-                ).to.be.revertedWith("DebtToken: lzReceive bad remote");
+                ).to.be.revertedWith("LZC: lzReceive bad remote");
             });
             it("mints payload amount to payload address", async () => {
                 await controller.setLayerZeroRemote(REMOTE_CHAIN, REMOTE_ADDR);

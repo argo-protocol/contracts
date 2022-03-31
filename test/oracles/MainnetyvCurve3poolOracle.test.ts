@@ -6,7 +6,6 @@ import { FakeContract, smock } from "@defi-wonderland/smock";
 
 chai.use(smock.matchers);
 
-
 async function fork_network(blockNumber = 14271659) {
     /// Use mainnet fork as provider
     return network.provider.request({
@@ -58,10 +57,9 @@ describe("MainnetyvCurve3pool oracle", () => {
         });
 
         it("can fetch the current price", async () => {
-            
             let [success, price] = await oracle.fetchPrice();
-            expect(success).to.be.true;            
-            expect(price).to.equal("1055802361876678856")
+            expect(success).to.be.true;
+            expect(price).to.equal("1055802361876678856");
         });
     });
 });

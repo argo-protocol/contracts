@@ -7,7 +7,7 @@ import { SafeAggregatorV3 } from "../libraries/SafeAggregatorV3.sol";
 
 interface IYearnVault {
     function pricePerShare() external view returns (uint256 price);
-    }
+}
 
 interface ICurvePool {
     function get_virtual_price() external view returns (uint256 price); //solhint-disable-line func-name-mixedcase
@@ -51,7 +51,6 @@ contract MainnetyvCurve3pool is IOracle {
      * @return the price with 18 decimals
      */
     function fetchPrice() external view override returns (bool, uint256) {
-
         // 1.  Fetch min stablecoin price between dai/usdc/usdt
         bool success;
         uint256 minStable;
@@ -82,7 +81,7 @@ contract MainnetyvCurve3pool is IOracle {
         // From curve docs at: https://curve.readthedocs.io/factory-pools.html?highlight=get_virtual_price#StableSwap.get_virtual_price
         // The current price of the pool LP token relative to the underlying pool assets. Given as an integer with 1e18 precision.
 
-        // Precision info: pricePerShare() is 18 decimals, get_virtual_price is 18 decimals, minStable is 18 decimals, and we want to return 18 decimals.  So divide by 18*2=36 decimals        
+        // Precision info: pricePerShare() is 18 decimals, get_virtual_price is 18 decimals, minStable is 18 decimals, and we want to return 18 decimals.  So divide by 18*2=36 decimals
         uint256 result = (yvcurve3pool.pricePerShare() * threeCrv.get_virtual_price() * minStable) / 1e36;
         return (true, result);
     }

@@ -93,9 +93,9 @@ contract ZeroInterestMarketTest is DSTest {
         if (_newPrice < 90000e18) {
             // this will cause a liquidation
             liquidator.liquidate(address(this), _repayAmount);
-            uint256 valueOfLiqAssets = (collateralToken.balanceOf(address(liquidator)) * _newPrice) /
+            uint valueOfLiqAssets = (collateralToken.balanceOf(address(liquidator)) * _newPrice) /
                 market.LAST_PRICE_PRECISION();
-            uint256 amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
+            uint amountPaid = _repayAmount - debtToken.balanceOf(address(liquidator));
             assertGt(valueOfLiqAssets, amountPaid);
         } else {
             // revert for not liquidating
