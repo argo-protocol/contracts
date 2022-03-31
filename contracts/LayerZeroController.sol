@@ -45,7 +45,6 @@ contract LayerZeroController is ILayerZeroReceiver, Ownable {
         bytes calldata _dstOmniChainTokenAddr,
         uint256 _qty
     ) public payable requireLayerZeroEnabled {
-        require(token.allowance(msg.sender, address(this)) >= _qty, "DebtToken: low allowance");
         token.transferFrom(msg.sender, address(this), _qty);
         token.burn(_qty);
         bytes memory payload = abi.encode(msg.sender, _qty);
