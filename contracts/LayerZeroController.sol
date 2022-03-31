@@ -39,7 +39,7 @@ contract LayerZeroController is ILayerZeroReceiver, Ownable {
     /**
      * @notice Send tokens to another chain.
      * @param _chainId Remote chain where the tokens are going
-     * @param _dstOmniChainTokenAddr Address of token on remote chain
+     * @param _dstOmniChainTokenAddr Address of LayerZero Controller on remote chain
      * @param _qty Quantity of tokens to send
      */
     function sendTokens(
