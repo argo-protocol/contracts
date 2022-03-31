@@ -19,10 +19,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         log("transfering ownership to operator multisig");
         await debtToken.transferOwnership(operatorMultisig);
     }
-    if ((await debtToken.lzAdmin()) == deployer) {
-        log("transfering LayerZero admin to operator multisig");
-        await debtToken.transferLayerZeroAdmin(operatorMultisig);
-    }
 };
 func.tags = ["DebtToken"];
 export default func;
