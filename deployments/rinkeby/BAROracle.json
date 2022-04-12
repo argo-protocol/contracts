@@ -1,5 +1,5 @@
 {
-  "address": "0x9cf47686E8CAeD33d3b269C1e9D714e26F1B2e56",
+  "address": "0x032C18e6C8B116E984ed88D2e79445af03F74bFe",
   "abi": [
     {
       "inputs": [],
@@ -46,28 +46,28 @@
       "type": "function"
     }
   ],
-  "transactionHash": "0xd1949b431852e64eb57dd6b5cd91f4cec193a567cf12cab49471f210f55b0a39",
+  "transactionHash": "0x49c4949d83aff73ac5d4d701e33d2ae7fc371ed7e9d0583e6fa197d00d1c3265",
   "receipt": {
     "to": null,
     "from": "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
-    "contractAddress": "0x9cf47686E8CAeD33d3b269C1e9D714e26F1B2e56",
+    "contractAddress": "0x032C18e6C8B116E984ed88D2e79445af03F74bFe",
     "transactionIndex": 0,
     "gasUsed": "100917",
     "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    "blockHash": "0x3ca9e0839ddae533d36f31ecb2721e8fe856c578cfcb38ef95a823847bd0060b",
-    "transactionHash": "0xd1949b431852e64eb57dd6b5cd91f4cec193a567cf12cab49471f210f55b0a39",
+    "blockHash": "0x4d3b2be3267610c5cfc8ab474af0a2a9b022d3b4d830af91ca008e6707fb2006",
+    "transactionHash": "0x49c4949d83aff73ac5d4d701e33d2ae7fc371ed7e9d0583e6fa197d00d1c3265",
     "logs": [],
-    "blockNumber": 10385678,
+    "blockNumber": 10491676,
     "cumulativeGasUsed": "100917",
     "status": 1,
     "byzantium": true
   },
   "args": [],
   "numDeployments": 1,
-  "solcInputHash": "c71c38bb9b435a616663ed98f0058d11",
-  "metadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"fetchPrice\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"}],\"name\":\"setPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/stubs/StubOracle.sol\":\"StubOracle\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":1},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IOracle {\\n    function fetchPrice() external view returns (bool, uint);\\n}\",\"keccak256\":\"0xf3bc4b871ebb74641f91462364551170df871926ad43013db480e3857095c1a1\",\"license\":\"MIT\"},\"contracts/stubs/StubOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport { IOracle } from \\\"../interfaces/IOracle.sol\\\";\\n\\ncontract StubOracle is IOracle {\\n    uint public price;\\n\\n    function setPrice(uint _price) external {\\n        price = _price;\\n    }\\n\\n    function fetchPrice() external view override returns (bool, uint) {\\n        return (true, price);\\n    }\\n}\",\"keccak256\":\"0xd8be4d1377ae08e550da8fde8872b7e4a36d3c82d7608ad40b0bd1d75921978e\",\"license\":\"MIT\"}},\"version\":1}",
-  "bytecode": "0x608060405234801561001057600080fd5b5060dc8061001f6000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea26469706673582212201921740e3ebb4a908723475b3ba26d715d7ee20e3bda6e370e33a085168bd88864736f6c63430008060033",
-  "deployedBytecode": "0x6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea26469706673582212201921740e3ebb4a908723475b3ba26d715d7ee20e3bda6e370e33a085168bd88864736f6c63430008060033",
+  "solcInputHash": "77cd55a4f4109bc94cff95c2ae08a719",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"fetchPrice\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"price\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_price\",\"type\":\"uint256\"}],\"name\":\"setPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/stubs/StubOracle.sol\":\"StubOracle\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":1},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\ninterface IOracle {\\n    function fetchPrice() external view returns (bool, uint);\\n}\\n\",\"keccak256\":\"0xa65995eecea402850832431eddd32c8991bfc4eac886593e85a76cd26d90a2f0\",\"license\":\"MIT\"},\"contracts/stubs/StubOracle.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.0;\\n\\nimport { IOracle } from \\\"../interfaces/IOracle.sol\\\";\\n\\ncontract StubOracle is IOracle {\\n    uint public price;\\n\\n    function setPrice(uint _price) external {\\n        price = _price;\\n    }\\n\\n    function fetchPrice() external view override returns (bool, uint) {\\n        return (true, price);\\n    }\\n}\\n\",\"keccak256\":\"0x95ca12fb2a707ab2afea881583909869efea4ab03efd0048edde071c7b9fee99\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060dc8061001f6000396000f3fe6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea2646970667358221220b9e1a2c6e7433becf130fa9dda2bc6b00ba089c3cd6d5ad70434d96d5548145f64736f6c63430008060033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b5060043610603c5760003560e01c80630fdb11cf14604157806391b7f5ed146067578063a035b1fe146079575b600080fd5b604b600054600191565b6040805192151583526020830191909152015b60405180910390f35b60776072366004608e565b600055565b005b608160005481565b604051908152602001605e565b600060208284031215609f57600080fd5b503591905056fea2646970667358221220b9e1a2c6e7433becf130fa9dda2bc6b00ba089c3cd6d5ad70434d96d5548145f64736f6c63430008060033",
   "devdoc": {
     "kind": "dev",
     "methods": {},
@@ -81,7 +81,7 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 7841,
+        "astId": 7858,
         "contract": "contracts/stubs/StubOracle.sol:StubOracle",
         "label": "price",
         "offset": 0,

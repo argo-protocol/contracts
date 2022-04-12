@@ -35,14 +35,14 @@ let config = {
         uniswapOracle: ZERO_ADDRESS, // Created in 05_mainnet_wxBTRFLY_oracle.ts
     },
     rinkeby: {
-        treasuryMultisig: "0xfE07A76856A6FFD96ddF466DEdedab1d76355A6b",
+        treasuryMultisig: "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
         operatorMultisig: "0x403898Ddff450b89e2D96BDDcf763541655FDE8B",
         dai: "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa",
         gOHM: "0xB4Aaf6857411248A79B95bcb1C13E86140fE9C29",
         ohmEthAggregator: ZERO_ADDRESS, // OHM-ETH oracle stubbed
         ethUsdAggregator: "0x8A753747A1Fa494EC906cE90E9f37563A8AF630e",
-        psmBuyFee: "250",
-        psmSellFee: "250",
+        psmBuyFee: "600",
+        psmSellFee: "600",
         wxBtrfly: "0xB4Aaf6857411248A79B95bcb1C13E86140fE9C29", // Not on rinkeby, just pointing to gohm
         btrfly: "0xB4Aaf6857411248A79B95bcb1C13E86140fE9C29", // Not on rinkeby, just pointing to gohm
         sushiSwapFactory: "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",

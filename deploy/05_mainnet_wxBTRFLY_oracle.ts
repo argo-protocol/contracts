@@ -63,4 +63,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 func.tags = ["mainnet-wxBTRFLY"];
+func.skip = async () => true;
 export default func;
