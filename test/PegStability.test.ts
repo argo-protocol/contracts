@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IERC20Metadata, IERC20, PegStability, PegStability__factory } from "../typechain";
+import { IERC20Metadata, IERC20, PegStability, PegStability__factory, IDebtToken } from "../typechain";
 import { ethers } from "hardhat";
 import chai, { expect } from "chai";
 import { FakeContract, smock } from "@defi-wonderland/smock";
@@ -12,18 +12,20 @@ describe("PegStability", () => {
     let owner: SignerWithAddress;
     let treasury: SignerWithAddress;
     let other: SignerWithAddress;
-    let debtToken: FakeContract<IERC20Metadata>;
+    let debtToken: FakeContract<IDebtToken>;
     let reserveToken: FakeContract<IERC20Metadata>;
 
     beforeEach(async () => {
         [owner, treasury, other] = await ethers.getSigners();
-        debtToken = await smock.fake<IERC20Metadata>("IERC20Metadata");
+        debtToken = await smock.fake<IDebtToken>("IDebtToken");
         reserveToken = await smock.fake<IERC20Metadata>("IERC20Metadata");
     });
 
     describe("constructor", () => {
         it("can construct", async () => {
-            let psm = await new PegStability__factory(owner).deploy(
+            let psm = await new PegStability__factory(owner).deploy();
+            await psm.initialize(
+                owner.address,
                 debtToken.address,
                 reserveToken.address,
                 250, // 0.25%
@@ -37,48 +39,14 @@ describe("PegStability", () => {
             expect(await psm.sellFee()).to.equal(450);
             expect(await psm.treasury()).to.equal(treasury.address);
         });
-
-        it("reverts on zero debt token address", async () => {
-            await expect(
-                new PegStability__factory(owner).deploy(
-                    ethers.constants.AddressZero,
-                    reserveToken.address,
-                    250, // 0.25%
-                    450, // 0.45%
-                    treasury.address
-                )
-            ).to.be.revertedWith("0x0 debt token");
-        });
-
-        it("reverts on zero reserve token address", async () => {
-            await expect(
-                new PegStability__factory(owner).deploy(
-                    debtToken.address,
-                    ethers.constants.AddressZero,
-                    250, // 0.25%
-                    450, // 0.45%
-                    treasury.address
-                )
-            ).to.be.revertedWith("0x0 reserve token");
-        });
-
-        it("reverts on zero treasury address", async () => {
-            await expect(
-                new PegStability__factory(owner).deploy(
-                    debtToken.address,
-                    reserveToken.address,
-                    250, // 0.25%
-                    450, // 0.45%
-                    ethers.constants.AddressZero
-                )
-            ).to.be.revertedWith("0x0 treasury");
-        });
     });
 
     context("post-construction", () => {
         let psm: PegStability;
         beforeEach(async () => {
-            psm = await new PegStability__factory(owner).deploy(
+            psm = await new PegStability__factory(owner).deploy();
+            await psm.initialize(
+                owner.address,
                 debtToken.address,
                 reserveToken.address,
                 250, // 0.25%

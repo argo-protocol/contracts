@@ -17,7 +17,9 @@ pragma solidity ^0.8.0;
 
 import { IMarket } from "./interfaces/IMarket.sol";
 import { ZeroInterestMarket } from "./ZeroInterestMarket.sol";
+import { PegStability } from "./PegStability.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /**
  * Factory for Markets
@@ -25,20 +27,24 @@ import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 contract MarketFactory {
     /**
      * @notice New market created
-     * @param index Index of the current market in `markets` list.
+     * @param market Address of the new market
      */
-    event CreateMarket(uint256 index);
+    event CreateMarket(address indexed debtToken, address indexed collateralToken, address market);
+
+    /**
+     * @notice New PSM created
+     * @param psm Address of the new PSM
+     */
+    event CreatePSM(address indexed debtToken, address indexed reserveToken, address psm);
 
     IMarket[] public markets;
     ZeroInterestMarket private zeroInterestMarketImpl;
+    PegStability private pegStabilityImpl;
 
     /**
-     * @notice Create new MarketFactory with an owner
-     * @param owner_ Owner of the factory and all markets
+     * @notice Create new MarketFactory
      */
-    constructor(address owner_) {
-        require(owner_ != address(0), "0x0 owner address");
-
+    constructor() {
         zeroInterestMarketImpl = new ZeroInterestMarket();
         zeroInterestMarketImpl.initialize(
             address(0x0),
@@ -50,10 +56,14 @@ contract MarketFactory {
             0,
             0
         );
+
+        pegStabilityImpl = new PegStability();
+        pegStabilityImpl.initialize(address(0x0), address(0x0), address(0x0), 0, 0, address(0x0));
     }
 
     /**
      * @notice Create new ZeroInterestMarket owned by this contract's owner
+     * @param _owner the account that administers the market
      * @param _treasury the account that receives fees
      * @param _collateralToken ERC-20 to be deposited as collateral
      * @param _debtToken ERC-20 to be withdrawn as debt
@@ -89,8 +99,7 @@ contract MarketFactory {
             _liquidationPenalty
         );
         markets.push(market);
-
-        emit CreateMarket(markets.length - 1);
+        emit CreateMarket(_debtToken, _collateralToken, address(market));
     }
 
     function numMarkets() public view returns (uint256) {
@@ -99,5 +108,33 @@ contract MarketFactory {
 
     function getMarkets() public view returns (IMarket[] memory) {
         return markets;
+    }
+
+    /**
+     * @notice Create new Peg Stability Module (PSM) owned by this contract's owner
+     * @param _owner the account that administers the PSM
+     * @param _debtToken ERC-20 to be withdrawn as debt
+     * @param _reserveToken ERC-20 to be deposited as collateral
+     * @param _buyFee Fee for buying debtToken
+     * @param _sellFee Fee for selling debtToken
+     * @param _treasury the account that receives fees
+     */
+    function createPegStabilityModule(
+        address _owner,
+        address _debtToken,
+        address _reserveToken,
+        uint256 _buyFee,
+        uint256 _sellFee,
+        address _treasury
+    ) public {
+        require(_debtToken != address(0), "0x0 debt token");
+        require(_reserveToken != address(0), "0x0 reserve token");
+        require(_treasury != address(0), "0x0 treasury");
+        require(IERC20Metadata(_debtToken).decimals() == IERC20Metadata(_reserveToken).decimals(), "decimal mismatch");
+
+        PegStability psm = PegStability(Clones.clone(address(pegStabilityImpl)));
+        psm.initialize(_owner, _debtToken, _reserveToken, _buyFee, _sellFee, _treasury);
+
+        emit CreatePSM(_debtToken, _reserveToken, address(psm));
     }
 }

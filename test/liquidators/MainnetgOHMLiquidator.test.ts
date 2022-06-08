@@ -30,6 +30,7 @@ const GOHM_WHALE = "0x33Ed792326EDc9e826B4E0ef64594AB3d8D00Acc";
 
 describe("MainnetgOhmLiquidator", () => {
     let owner: SignerWithAddress;
+    let treasury: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
     let whale: SignerWithAddress;
@@ -44,14 +45,15 @@ describe("MainnetgOhmLiquidator", () => {
     beforeEach(async () => {
         await forkNetwork();
 
-        [owner, alice, bob] = await ethers.getSigners();
+        [owner, treasury, alice, bob] = await ethers.getSigners();
 
         /// TODO: is there a way to use our deploy scripts here?
         debtToken = await new DebtToken__factory(owner).deploy(owner.address);
         oracle = await new StubOracle__factory(owner).deploy();
-        let marketFactory = await new MarketFactory__factory(owner).deploy(owner.address);
+        let marketFactory = await new MarketFactory__factory(owner).deploy();
         await marketFactory.createZeroInterestMarket(
             owner.address,
+            treasury.address,
             GOHM_ADDRESS,
             debtToken.address,
             oracle.address,
@@ -61,7 +63,9 @@ describe("MainnetgOhmLiquidator", () => {
         );
         let marketAddress = await marketFactory.markets(0);
         market = await (await ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddress);
-        psm = await new PegStability__factory(owner).deploy(
+        psm = await new PegStability__factory(owner).deploy();
+        await psm.initialize(
+            owner.address,
             debtToken.address,
             DAI_ADDRESS,
             250, // buy fee 0.25%
