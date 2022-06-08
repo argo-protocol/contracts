@@ -18,12 +18,11 @@ pragma solidity ^0.8.0;
 import { IMarket } from "./interfaces/IMarket.sol";
 import { ZeroInterestMarket } from "./ZeroInterestMarket.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * Factory for Markets
  **/
-contract MarketFactory is Ownable {
+contract MarketFactory {
     /**
      * @notice New market created
      * @param index Index of the current market in `markets` list.
@@ -51,7 +50,6 @@ contract MarketFactory is Ownable {
             0,
             0
         );
-        transferOwnership(owner_);
     }
 
     /**
@@ -65,6 +63,7 @@ contract MarketFactory is Ownable {
      * @param _liquidationPenalty Rate to calculate liquidation penalty
      */
     function createZeroInterestMarket(
+        address _owner,
         address _treasury,
         address _collateralToken,
         address _debtToken,
@@ -72,7 +71,7 @@ contract MarketFactory is Ownable {
         uint256 _maxLoanToValue,
         uint256 _borrowRate,
         uint256 _liquidationPenalty
-    ) public onlyOwner {
+    ) public {
         require(_treasury != address(0), "0x0 treasury address");
         require(_collateralToken != address(0), "0x0 collateralToken address");
         require(_debtToken != address(0), "0x0 debtToken address");
@@ -80,7 +79,7 @@ contract MarketFactory is Ownable {
 
         ZeroInterestMarket market = ZeroInterestMarket(Clones.clone(address(zeroInterestMarketImpl)));
         market.initialize(
-            owner(),
+            _owner,
             _treasury,
             _collateralToken,
             _debtToken,
