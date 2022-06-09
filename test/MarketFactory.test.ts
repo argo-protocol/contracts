@@ -40,14 +40,14 @@ describe("MarketFactory", () => {
 
                 expect(result).to.emit(marketFactory, "CreateMarket");
 
-                const psmAddr = (
+                const marketAddr = (
                     await marketFactory.queryFilter(
                         marketFactory.filters.CreateMarket(debtToken, collateralToken),
                         result.blockHash
                     )
                 )[0].args.market;
 
-                const market = await ethers.getContractAt("ZeroInterestMarket", psmAddr);
+                const market = await ethers.getContractAt("ZeroInterestMarket", marketAddr);
 
                 expect(await market.owner()).to.eq(owner);
                 expect(await market.treasury()).to.eq(treasury);
