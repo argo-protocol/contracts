@@ -16,32 +16,33 @@ pragma solidity ^0.8.0;
 //
 
 import { IERC3156FlashBorrower, IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156.sol";
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC20FlashMint } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20FlashMint.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ERC20Upgradeable } from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
  * @notice A collateralized debt position token. Protocol assumes this is worth $1.
  */
-contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
+contract DebtToken is ERC20Upgradeable, OwnableUpgradeable, IERC3156FlashLender {
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
     uint private maxFlashLoanAmount;
     uint private flashFeeRate;
     uint public feesCollected;
     uint private constant FLASH_FEE_PRECISION = 1e5;
-    address private treasury;
+    address public treasury;
 
     event FlashFeeRateUpdated(uint newFlashFeeRate);
     event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
     event TreasuryUpdated(address newTreasury);
     event FeesHarvested(uint fees);
 
-    constructor(
+    function initialize(
+        address _owner,
+        address _treasury,
         string memory _name,
-        string memory _symbol,
-        address _treasury
-    ) ERC20(_name, _symbol) {
-        require(_treasury != address(0), "DebtToken: 0x0 treasury address");
+        string memory _symbol
+    ) public initializer {
+        __ERC20_init(_name, _symbol);
+        _transferOwnership(_owner);
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;

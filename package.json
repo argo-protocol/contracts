@@ -59,5 +59,8 @@
   "engines": {
     "node": ">=14.0.0",
     "yarn": "^1.22.15"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^4.6.0"
   }
 }

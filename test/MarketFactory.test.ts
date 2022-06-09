@@ -151,4 +151,45 @@ describe("MarketFactory", () => {
             ).to.be.revertedWith("0x0 treasury");
         });
     });
+
+    describe("createToken", () => {
+        let owner: string;
+        let treasury: string;
+
+        beforeEach(async () => {
+            owner = ethers.Wallet.createRandom().address;
+            treasury = ethers.Wallet.createRandom().address;
+        });
+
+        it("creates initialized token and emits CreateToken event", async () => {
+            for (let i = 0; i < 3; i++) {
+                const result = await marketFactory.createToken(owner, treasury, "A Stable", "FOO");
+
+                expect(result).to.emit(marketFactory, "CreateToken");
+
+                const tokenAddr = (
+                    await marketFactory.queryFilter(marketFactory.filters.CreateToken(), result.blockHash)
+                )[0].args.token;
+
+                const token = await ethers.getContractAt("DebtToken", tokenAddr);
+
+                expect(await token.owner()).to.eq(owner);
+                expect(await token.treasury()).to.eq(treasury);
+                expect(await token.name()).to.eq("A Stable");
+                expect(await token.symbol()).to.eq("FOO");
+            }
+        });
+
+        it("reverts on zero owner address", async () => {
+            await expect(
+                marketFactory.createToken(ethers.constants.AddressZero, treasury, "A Stable", "FOO")
+            ).to.be.revertedWith("0x0 owner");
+        });
+
+        it("reverts on zero treasury address", async () => {
+            await expect(
+                marketFactory.createToken(owner, ethers.constants.AddressZero, "A Stable", "FOO")
+            ).to.be.revertedWith("0x0 treasury");
+        });
+    });
 });
