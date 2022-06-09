@@ -36,7 +36,11 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     event TreasuryUpdated(address newTreasury);
     event FeesHarvested(uint fees);
 
-    constructor(address _treasury) ERC20("Argo Stablecoin", "ARGO") {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        address _treasury
+    ) ERC20(_name, _symbol) {
         require(_treasury != address(0), "DebtToken: 0x0 treasury address");
         treasury = _treasury;
         maxFlashLoanAmount = 0;
