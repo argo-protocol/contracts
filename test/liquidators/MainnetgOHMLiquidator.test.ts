@@ -51,7 +51,7 @@ describe("MainnetgOhmLiquidator", () => {
         debtToken = await new DebtToken__factory(owner).deploy(owner.address);
         oracle = await new StubOracle__factory(owner).deploy();
         let marketFactory = await new MarketFactory__factory(owner).deploy();
-        await marketFactory.createZeroInterestMarket(
+        const result = await marketFactory.createZeroInterestMarket(
             owner.address,
             treasury.address,
             GOHM_ADDRESS,
@@ -61,7 +61,14 @@ describe("MainnetgOhmLiquidator", () => {
             1500, // borrow rate (1.5%)
             10000 // liquidation penalty (10%)
         );
-        let marketAddress = await marketFactory.markets(0);
+
+        const marketAddress = (
+            await marketFactory.queryFilter(
+                marketFactory.filters.CreateMarket(debtToken.address, GOHM_ADDRESS),
+                result.blockHash
+            )
+        )[0].args.market;
+
         market = await (await ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddress);
         psm = await new PegStability__factory(owner).deploy();
         await psm.initialize(

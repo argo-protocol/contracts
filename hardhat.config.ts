@@ -23,26 +23,6 @@ task("deployments", "Print the list of deployment addresses for the current netw
     console.table(deployments);
 });
 
-task("markets", "Print the markets created by the currently deployed MarketFactory", async (args, hre) => {
-    const deployment = await hre.deployments.get("MarketFactory");
-    const marketFactory = await hre.ethers.getContractAt("MarketFactory", deployment.address);
-
-    const numMarkets = await marketFactory.numMarkets();
-    for (let i = BigNumber.from(0); i.lt(numMarkets); i = i.add(1)) {
-        const marketAddr = await marketFactory.markets(i);
-        const market = (await hre.ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddr);
-        console.log("");
-        console.log(`${marketAddr} - ${i.toString()}`);
-        console.log(`  lastPrice:          ${await market.lastPrice()}`);
-        console.log(`  feesCollected:      ${await market.feesCollected()}`);
-        console.log(`  maxLoanToValue:     ${await market.maxLoanToValue()}`);
-        console.log(`  borrowRate:         ${await market.borrowRate()}`);
-        console.log(`  liquidationPenalty: ${await market.liquidationPenalty()}`);
-        console.log(`  totalCollateral:    ${await market.totalCollateral()}`);
-        console.log(`  totalDebt:          ${await market.totalDebt()}`);
-    }
-});
-
 dotenv.config();
 
 const privateKey: string | undefined = process.env.PRIVATE_KEY ?? "NO_PRIVATE_KEY";

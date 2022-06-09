@@ -37,7 +37,6 @@ contract MarketFactory {
      */
     event CreatePSM(address indexed debtToken, address indexed reserveToken, address psm);
 
-    IMarket[] public markets;
     ZeroInterestMarket private zeroInterestMarketImpl;
     PegStability private pegStabilityImpl;
 
@@ -98,16 +97,7 @@ contract MarketFactory {
             _borrowRate,
             _liquidationPenalty
         );
-        markets.push(market);
         emit CreateMarket(_debtToken, _collateralToken, address(market));
-    }
-
-    function numMarkets() public view returns (uint256) {
-        return markets.length;
-    }
-
-    function getMarkets() public view returns (IMarket[] memory) {
-        return markets;
     }
 
     /**
