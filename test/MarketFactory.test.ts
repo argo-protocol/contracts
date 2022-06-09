@@ -75,7 +75,7 @@ describe("MarketFactory", () => {
             debtToken.decimals.returns(18);
 
             reserveToken = await smock.fake<IERC20Metadata>("IERC20Metadata");
-            reserveToken.decimals.returns(18);
+            reserveToken.decimals.returns(6);
         });
 
         it("creates initialized PSM and emits CreatePSM event", async () => {

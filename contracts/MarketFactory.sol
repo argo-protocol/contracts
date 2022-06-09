@@ -130,7 +130,6 @@ contract MarketFactory {
         require(_debtToken != address(0), "0x0 debt token");
         require(_reserveToken != address(0), "0x0 reserve token");
         require(_treasury != address(0), "0x0 treasury");
-        require(IERC20Metadata(_debtToken).decimals() == IERC20Metadata(_reserveToken).decimals(), "decimal mismatch");
 
         PegStability psm = PegStability(Clones.clone(address(pegStabilityImpl)));
         psm.initialize(_owner, _debtToken, _reserveToken, _buyFee, _sellFee, _treasury);
