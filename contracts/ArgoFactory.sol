@@ -25,7 +25,7 @@ import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/I
 /**
  * Factory for Markets
  **/
-contract MarketFactory {
+contract ArgoFactory {
     /**
      * @notice New market created
      * @param market Address of the new market
@@ -49,7 +49,7 @@ contract MarketFactory {
     DebtToken private debtTokenImpl;
 
     /**
-     * @notice Create new MarketFactory
+     * @notice Create new ArgoFactory
      */
     constructor() {
         zeroInterestMarketImpl = new ZeroInterestMarket();

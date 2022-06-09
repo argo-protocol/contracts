@@ -5,7 +5,7 @@ import {
     ZeroInterestMarket,
     DebtToken,
     DebtToken__factory,
-    MarketFactory__factory,
+    ArgoFactory__factory,
     MainnetgOhmLiquidatorV1,
     MainnetgOhmLiquidatorV1__factory,
     StubOracle__factory,
@@ -51,8 +51,8 @@ describe("MainnetgOhmLiquidator", () => {
         debtToken = await new DebtToken__factory(owner).deploy();
         await debtToken.initialize(owner.address, treasury.address, "Argo Stablecoin", "ARGO");
         oracle = await new StubOracle__factory(owner).deploy();
-        let marketFactory = await new MarketFactory__factory(owner).deploy();
-        const result = await marketFactory.createZeroInterestMarket(
+        let argoFactory = await new ArgoFactory__factory(owner).deploy();
+        const result = await argoFactory.createZeroInterestMarket(
             owner.address,
             treasury.address,
             GOHM_ADDRESS,
@@ -64,8 +64,8 @@ describe("MainnetgOhmLiquidator", () => {
         );
 
         const marketAddress = (
-            await marketFactory.queryFilter(
-                marketFactory.filters.CreateMarket(debtToken.address, GOHM_ADDRESS),
+            await argoFactory.queryFilter(
+                argoFactory.filters.CreateMarket(debtToken.address, GOHM_ADDRESS),
                 result.blockHash
             )
         )[0].args.market;
