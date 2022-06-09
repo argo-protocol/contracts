@@ -7,6 +7,7 @@ import { FakeContract, smock } from "@defi-wonderland/smock";
 chai.use(smock.matchers);
 
 const E18 = `000000000000000000`;
+const E6 = `000000`;
 
 describe("PegStability", () => {
     let owner: SignerWithAddress;
@@ -18,7 +19,9 @@ describe("PegStability", () => {
     beforeEach(async () => {
         [owner, treasury, other] = await ethers.getSigners();
         debtToken = await smock.fake<IDebtToken>("IDebtToken");
+        debtToken.decimals.returns(18);
         reserveToken = await smock.fake<IERC20Metadata>("IERC20Metadata");
+        reserveToken.decimals.returns(6);
     });
 
     describe("constructor", () => {
@@ -61,11 +64,11 @@ describe("PegStability", () => {
                 debtToken.balanceOf.returns(`1000000${E18}`);
                 reserveToken.transferFrom.returns(true);
 
-                const AMOUNT = `10000${E18}`;
+                const AMOUNT = `10000${E6}`;
 
                 await psm.connect(other).buy(AMOUNT);
 
-                expect(debtToken.transfer).to.be.calledWith(other.address, AMOUNT);
+                expect(debtToken.transfer).to.be.calledWith(other.address, `10000${E18}`);
             });
 
             it("transfers reserve tokens, plus fees from msg.sender", async () => {
@@ -73,12 +76,12 @@ describe("PegStability", () => {
                 debtToken.balanceOf.returns(`1000000${E18}`);
                 reserveToken.transferFrom.returns(true);
 
-                const AMOUNT = `10000${E18}`;
+                const AMOUNT = `10000${E6}`;
 
                 await psm.connect(other).buy(AMOUNT);
 
-                expect(reserveToken.transferFrom).to.be.calledWith(other.address, psm.address, `10025${E18}`);
-                expect(await psm.buyFeesCollected()).to.equal(`25${E18}`);
+                expect(reserveToken.transferFrom).to.be.calledWith(other.address, psm.address, `10025${E6}`);
+                expect(await psm.buyFeesCollected()).to.equal(`25${E6}`);
             });
 
             it("emits a ReserveBought event", async () => {
@@ -86,7 +89,7 @@ describe("PegStability", () => {
                 debtToken.balanceOf.returns(`1000000${E18}`);
                 reserveToken.transferFrom.returns(true);
 
-                const AMOUNT = `10000${E18}`;
+                const AMOUNT = `10000${E6}`;
 
                 await expect(psm.connect(other).buy(AMOUNT)).to.emit(psm, "ReservesBought").withArgs(AMOUNT);
             });
@@ -99,7 +102,7 @@ describe("PegStability", () => {
                 reserveToken.transfer.returns(true);
                 reserveToken.balanceOf.returns(`10000${E18}`);
 
-                const AMOUNT = `10000${E18}`;
+                const AMOUNT = `10000${E6}`;
                 await psm.connect(other).sell(AMOUNT);
                 expect(await psm.sellFeesCollected()).to.equal(`45${E18}`);
 
@@ -133,9 +136,9 @@ describe("PegStability", () => {
             it("transfers debt tokens plus fees from msg.sender", async () => {
                 debtToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
-                reserveToken.balanceOf.returns(`100000${E18}`);
+                reserveToken.balanceOf.returns(`100000${E6}`);
 
-                const AMOUNT = `50000${E18}`;
+                const AMOUNT = `50000${E6}`;
 
                 await psm.connect(other).sell(AMOUNT);
 
@@ -261,13 +264,13 @@ describe("PegStability", () => {
                 debtToken.balanceOf.returns(`100000${E18}`);
                 debtToken.transferFrom.returns(true);
                 debtToken.transfer.returns(true);
-                reserveToken.balanceOf.returns(`100000${E18}`);
+                reserveToken.balanceOf.returns(`100000${E6}`);
                 reserveToken.transferFrom.returns(true);
                 reserveToken.transfer.returns(true);
 
-                const AMOUNT = `50000${E18}`;
+                const AMOUNT = `50000${E6}`;
                 const SELL_FEES = `225${E18}`; // 0.45%
-                const BUY_FEES = `125${E18}`; // 0.25%
+                const BUY_FEES = `125${E6}`; // 0.25%
 
                 await psm.connect(other).sell(AMOUNT);
                 await psm.connect(other).buy(AMOUNT);
@@ -275,7 +278,7 @@ describe("PegStability", () => {
                 expect(await psm.buyFeesCollected()).to.equal(BUY_FEES);
                 expect(await psm.sellFeesCollected()).to.equal(SELL_FEES);
 
-                await expect(psm.harvestFees()).to.emit(psm, "FeesHarvested").withArgs(`350${E18}`);
+                await expect(psm.harvestFees()).to.emit(psm, "FeesHarvested").withArgs(BUY_FEES, SELL_FEES);
 
                 expect(await psm.buyFeesCollected()).to.equal(0);
                 expect(await psm.sellFeesCollected()).to.equal(0);
