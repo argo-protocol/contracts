@@ -18,6 +18,7 @@ pragma solidity ^0.8.0;
 import { IMarket } from "./interfaces/IMarket.sol";
 import { ZeroInterestMarket } from "./ZeroInterestMarket.sol";
 import { PegStability } from "./PegStability.sol";
+import { DebtToken } from "./DebtToken.sol";
 import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
@@ -36,6 +37,12 @@ contract ArgoFactory {
      * @param psm Address of the new PSM
      */
     event CreatePSM(address indexed debtToken, address indexed reserveToken, address psm);
+
+    /**
+     * @notice New Token created
+     * @param token Address of the new Token
+     */
+    event CreateToken(address token);
 
     ZeroInterestMarket private zeroInterestMarketImpl;
     PegStability private pegStabilityImpl;
@@ -62,6 +69,7 @@ contract ArgoFactory {
 
     /**
      * @notice Create new ZeroInterestMarket owned by this contract's owner
+     * @dev Uses a lightweight, non-upgradeable proxy clone to save gas.
      * @param _owner the account that administers the market
      * @param _treasury the account that receives fees
      * @param _collateralToken ERC-20 to be deposited as collateral
@@ -102,6 +110,7 @@ contract ArgoFactory {
 
     /**
      * @notice Create new Peg Stability Module (PSM) owned by this contract's owner
+     * @dev Uses a lightweight, non-upgradeable proxy clone to save gas.
      * @param _owner the account that administers the PSM
      * @param _debtToken ERC-20 to be withdrawn as debt
      * @param _reserveToken ERC-20 to be deposited as collateral
@@ -125,5 +134,22 @@ contract ArgoFactory {
         psm.initialize(_owner, _debtToken, _reserveToken, _buyFee, _sellFee, _treasury);
 
         emit CreatePSM(_debtToken, _reserveToken, address(psm));
+    }
+
+    /**
+     * @notice Create new ERC-20 token for use with CDP markets
+     * @param _owner the account that administers the PSM
+     * @param _treasury the account that receives fees
+     * @param _name name of the ERC-20 token
+     * @param _symbol symbol of the ERC-20 token
+     */
+    function createToken(
+        address _owner,
+        address _treasury,
+        string memory _name,
+        string memory _symbol
+    ) public {
+        DebtToken token = new DebtToken(_owner, _treasury, _name, _symbol);
+        emit CreateToken(address(token));
     }
 }

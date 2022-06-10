@@ -48,7 +48,12 @@ describe("MainnetgOhmLiquidator", () => {
         [owner, treasury, alice, bob] = await ethers.getSigners();
 
         /// TODO: is there a way to use our deploy scripts here?
-        debtToken = await new DebtToken__factory(owner).deploy("Argo Stablecoin", "ARGO", owner.address);
+        debtToken = await new DebtToken__factory(owner).deploy(
+            owner.address,
+            treasury.address,
+            "Argo Stablecoin",
+            "ARGO"
+        );
         oracle = await new StubOracle__factory(owner).deploy();
         let argoFactory = await new ArgoFactory__factory(owner).deploy();
         const result = await argoFactory.createZeroInterestMarket(

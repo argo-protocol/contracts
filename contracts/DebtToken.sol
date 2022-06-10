@@ -25,11 +25,11 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  */
 contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     bytes32 private constant _RETURN_VALUE = keccak256("ERC3156FlashBorrower.onFlashLoan");
-    uint private maxFlashLoanAmount;
-    uint private flashFeeRate;
+    uint public maxFlashLoanAmount;
+    uint public flashFeeRate;
     uint public feesCollected;
     uint private constant FLASH_FEE_PRECISION = 1e5;
-    address private treasury;
+    address public treasury;
 
     event FlashFeeRateUpdated(uint newFlashFeeRate);
     event MaxFlashLoanAmountUpdated(uint newMaxFlashLoanAmount);
@@ -37,14 +37,17 @@ contract DebtToken is ERC20, Ownable, IERC3156FlashLender {
     event FeesHarvested(uint fees);
 
     constructor(
+        address _owner,
+        address _treasury,
         string memory _name,
-        string memory _symbol,
-        address _treasury
+        string memory _symbol
     ) ERC20(_name, _symbol) {
-        require(_treasury != address(0), "DebtToken: 0x0 treasury address");
+        require(_owner != address(0), "DebtToken: 0x0 owner");
+        require(_treasury != address(0), "DebtToken: 0x0 treasury");
         treasury = _treasury;
         maxFlashLoanAmount = 0;
         flashFeeRate = 0;
+        _transferOwnership(_owner);
 
         emit TreasuryUpdated(treasury);
         emit MaxFlashLoanAmountUpdated(maxFlashLoanAmount);

@@ -16,7 +16,12 @@ describe("DebtToken", () => {
 
     describe("constructor", () => {
         it("sets the constants", async () => {
-            const token = await new DebtToken__factory(owner).deploy("Argo Stablecoin", "ARGO", treasury.address);
+            const token = await new DebtToken__factory(owner).deploy(
+                owner.address,
+                treasury.address,
+                "Argo Stablecoin",
+                "ARGO"
+            );
 
             expect(await token.name()).to.equal("Argo Stablecoin");
             expect(await token.symbol()).to.equal("ARGO");
@@ -28,7 +33,12 @@ describe("DebtToken", () => {
     describe("post-construction", () => {
         let token: DebtToken;
         beforeEach(async () => {
-            token = await new DebtToken__factory(owner).deploy("Argo Stablecoin", "ARGO", treasury.address);
+            token = await new DebtToken__factory(owner).deploy(
+                owner.address,
+                treasury.address,
+                "Argo Stablecoin",
+                "ARGO"
+            );
         });
 
         describe("mint", () => {
