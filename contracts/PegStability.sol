@@ -16,19 +16,22 @@ pragma solidity ^0.8.0;
 //
 
 import { IPSM } from "./interfaces/IPSM.sol";
+import { DecimalConverter } from "./libraries/DecimalConverter.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Initializable } from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 /**
  * @notice A Peg Stability Module (PSM) that allows swapping debtToken 1:1 for another
  * stablecoin assesses a buy and sell fee on swaps. While fees are collected in both the
  * reserve and debt tokens, they are only harvested in debt tokens.
  */
-contract PegStability is Ownable, IPSM {
+contract PegStability is Ownable, IPSM, Initializable {
     using SafeERC20 for IERC20Metadata;
+    using DecimalConverter for uint256;
 
-    event FeesHarvested(uint fees);
+    event FeesHarvested(uint reserveTokenHarvest, uint debtTokenHarvest);
     event ReservesBought(uint amount);
     event ReservesSold(uint amount);
     event ReservesWithdrawn(uint amount);
@@ -36,8 +39,8 @@ contract PegStability is Ownable, IPSM {
     event BuyFeeUpdated(uint fee);
     event SellFeeUpdated(uint fee);
 
-    IERC20Metadata public immutable debtToken;
-    IERC20Metadata public immutable reserveToken;
+    IERC20Metadata public debtToken;
+    IERC20Metadata public reserveToken;
     uint256 public override buyFee;
     uint256 public override sellFee;
     uint256 public constant override FEE_PRECISION = 1e5;
@@ -46,24 +49,22 @@ contract PegStability is Ownable, IPSM {
     uint256 public sellFeesCollected; // in debt tokens
     address public treasury;
 
-    constructor(
+    function initialize(
+        address _owner,
         address _debtToken,
         address _reserveToken,
         uint256 _buyFee,
         uint256 _sellFee,
         address _treasury
-    ) {
-        require(_debtToken != address(0), "0x0 debt token");
-        require(_reserveToken != address(0), "0x0 reserve token");
-        require(_treasury != address(0), "0x0 treasury");
-        require(IERC20Metadata(_debtToken).decimals() == IERC20Metadata(_reserveToken).decimals(), "decimal mismatch");
-
+    ) public initializer {
         debtToken = IERC20Metadata(_debtToken);
         reserveToken = IERC20Metadata(_reserveToken);
 
         buyFee = _buyFee;
         sellFee = _sellFee;
         treasury = _treasury;
+
+        Ownable._transferOwnership(_owner);
     }
 
     /**
@@ -73,8 +74,10 @@ contract PegStability is Ownable, IPSM {
      * @param _amount the amount of reserve token to buy
      */
     function buy(uint256 _amount) external override {
+        uint256 debtTokenAmount = _amount.convertDecimal(reserveToken.decimals(), debtToken.decimals());
+
         // ensure we can still withdraw fees
-        require(_amount + sellFeesCollected <= debtToken.balanceOf(address(this)), "insufficient balance");
+        require(debtTokenAmount + sellFeesCollected <= debtToken.balanceOf(address(this)), "insufficient balance");
 
         uint256 fees = (_amount * buyFee) / FEE_PRECISION;
         buyFeesCollected += fees;
@@ -82,24 +85,26 @@ contract PegStability is Ownable, IPSM {
         emit ReservesBought(_amount);
 
         reserveToken.safeTransferFrom(msg.sender, address(this), _amount + fees);
-        debtToken.safeTransfer(msg.sender, _amount);
+        debtToken.safeTransfer(msg.sender, debtTokenAmount);
     }
 
     /**
-     * @notice sells _amount of reserveToken in exchange for debtToken.
+     * @notice PSM sells _amount of reserveToken in exchange for debtToken.
      * Will transfer _amount + sell fees of debtToken from msg.sender
      * requires approval
      * @param _amount the amount of reserve token to sell
      */
     function sell(uint256 _amount) external override {
+        uint256 debtTokenAmount = _amount.convertDecimal(reserveToken.decimals(), debtToken.decimals());
+
         require(_amount + buyFeesCollected <= reserveToken.balanceOf(address(this)), "insufficient balance");
 
-        uint256 fees = (_amount * sellFee) / FEE_PRECISION;
+        uint256 fees = (debtTokenAmount * sellFee) / FEE_PRECISION;
         sellFeesCollected += fees;
 
         emit ReservesSold(_amount);
 
-        debtToken.safeTransferFrom(msg.sender, address(this), _amount + fees);
+        debtToken.safeTransferFrom(msg.sender, address(this), debtTokenAmount + fees);
         reserveToken.safeTransfer(msg.sender, _amount);
     }
 
@@ -153,7 +158,7 @@ contract PegStability is Ownable, IPSM {
         uint reserveTokenHarvest = buyFeesCollected;
         sellFeesCollected = 0;
         buyFeesCollected = 0;
-        emit FeesHarvested(debtTokenHarvest + reserveTokenHarvest);
+        emit FeesHarvested(reserveTokenHarvest, debtTokenHarvest);
 
         debtToken.safeTransfer(treasury, debtTokenHarvest);
         reserveToken.safeTransfer(treasury, reserveTokenHarvest);

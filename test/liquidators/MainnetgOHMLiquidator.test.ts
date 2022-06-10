@@ -5,7 +5,7 @@ import {
     ZeroInterestMarket,
     DebtToken,
     DebtToken__factory,
-    MarketFactory__factory,
+    ArgoFactory__factory,
     MainnetgOhmLiquidatorV1,
     MainnetgOhmLiquidatorV1__factory,
     StubOracle__factory,
@@ -30,6 +30,7 @@ const GOHM_WHALE = "0x33Ed792326EDc9e826B4E0ef64594AB3d8D00Acc";
 
 describe("MainnetgOhmLiquidator", () => {
     let owner: SignerWithAddress;
+    let treasury: SignerWithAddress;
     let alice: SignerWithAddress;
     let bob: SignerWithAddress;
     let whale: SignerWithAddress;
@@ -44,14 +45,20 @@ describe("MainnetgOhmLiquidator", () => {
     beforeEach(async () => {
         await forkNetwork();
 
-        [owner, alice, bob] = await ethers.getSigners();
+        [owner, treasury, alice, bob] = await ethers.getSigners();
 
         /// TODO: is there a way to use our deploy scripts here?
-        debtToken = await new DebtToken__factory(owner).deploy(owner.address);
-        oracle = await new StubOracle__factory(owner).deploy();
-        let marketFactory = await new MarketFactory__factory(owner).deploy(owner.address);
-        await marketFactory.createZeroInterestMarket(
+        debtToken = await new DebtToken__factory(owner).deploy(
             owner.address,
+            treasury.address,
+            "Argo Stablecoin",
+            "ARGO"
+        );
+        oracle = await new StubOracle__factory(owner).deploy();
+        let argoFactory = await new ArgoFactory__factory(owner).deploy();
+        const result = await argoFactory.createZeroInterestMarket(
+            owner.address,
+            treasury.address,
             GOHM_ADDRESS,
             debtToken.address,
             oracle.address,
@@ -59,9 +66,18 @@ describe("MainnetgOhmLiquidator", () => {
             1500, // borrow rate (1.5%)
             10000 // liquidation penalty (10%)
         );
-        let marketAddress = await marketFactory.markets(0);
+
+        const marketAddress = (
+            await argoFactory.queryFilter(
+                argoFactory.filters.CreateMarket(debtToken.address, GOHM_ADDRESS),
+                result.blockHash
+            )
+        )[0].args.market;
+
         market = await (await ethers.getContractFactory("ZeroInterestMarket")).attach(marketAddress);
-        psm = await new PegStability__factory(owner).deploy(
+        psm = await new PegStability__factory(owner).deploy();
+        await psm.initialize(
+            owner.address,
             debtToken.address,
             DAI_ADDRESS,
             250, // buy fee 0.25%
