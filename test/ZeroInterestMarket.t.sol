@@ -24,7 +24,7 @@ contract ZeroInterestMarketTest is DSTest {
         owner = new TestAccount("owner", address(0), address(0));
         treasury = new TestAccount("treasury", address(0), address(0));
         collateralToken = new ERC20Mock("TEST", "Test Token", address(this), 1e18);
-        debtToken = new DebtToken(address(treasury));
+        debtToken = new DebtToken("Test Argo", "ARGO", address(treasury));
         oracle = new StubOracle();
         market = new ZeroInterestMarket();
         market.initialize(
