@@ -1,18 +1,18 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { IDebtToken, IERC20, IERC20Metadata, MarketFactory } from "../typechain";
+import { IDebtToken, IERC20, IERC20Metadata, ArgoFactory } from "../typechain";
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { FakeContract, smock } from "@defi-wonderland/smock";
 
 const x0 = "0x".padEnd(42, "0");
 
-describe("MarketFactory", () => {
+describe("ArgoFactory", () => {
     let deployer: SignerWithAddress;
-    let marketFactory: MarketFactory;
+    let argoFactory: ArgoFactory;
 
     beforeEach(async () => {
         [deployer] = await ethers.getSigners();
-        marketFactory = await (await ethers.getContractFactory("MarketFactory")).connect(deployer).deploy();
+        argoFactory = await (await ethers.getContractFactory("ArgoFactory")).connect(deployer).deploy();
     });
 
     describe("createZeroInterestMarket", () => {
@@ -27,7 +27,7 @@ describe("MarketFactory", () => {
                 const borrowRate = 1 + i;
                 const liquidationPenalty = 1 + i;
 
-                const result = await marketFactory.createZeroInterestMarket(
+                const result = await argoFactory.createZeroInterestMarket(
                     owner,
                     treasury,
                     collateralToken,
@@ -38,11 +38,11 @@ describe("MarketFactory", () => {
                     liquidationPenalty
                 );
 
-                expect(result).to.emit(marketFactory, "CreateMarket");
+                expect(result).to.emit(argoFactory, "CreateMarket");
 
                 const marketAddr = (
-                    await marketFactory.queryFilter(
-                        marketFactory.filters.CreateMarket(debtToken, collateralToken),
+                    await argoFactory.queryFilter(
+                        argoFactory.filters.CreateMarket(debtToken, collateralToken),
                         result.blockHash
                     )
                 )[0].args.market;
@@ -83,7 +83,7 @@ describe("MarketFactory", () => {
                 const buyFee = 1 + i;
                 const sellFee = 1 + i;
 
-                const result = await marketFactory.createPegStabilityModule(
+                const result = await argoFactory.createPegStabilityModule(
                     owner,
                     debtToken.address,
                     reserveToken.address,
@@ -92,11 +92,11 @@ describe("MarketFactory", () => {
                     treasury
                 );
 
-                expect(result).to.emit(marketFactory, "CreatePSM");
+                expect(result).to.emit(argoFactory, "CreatePSM");
 
                 const psmAddr = (
-                    await marketFactory.queryFilter(
-                        marketFactory.filters.CreatePSM(debtToken.address, reserveToken.address),
+                    await argoFactory.queryFilter(
+                        argoFactory.filters.CreatePSM(debtToken.address, reserveToken.address),
                         result.blockHash
                     )
                 )[0].args.psm;
@@ -114,7 +114,7 @@ describe("MarketFactory", () => {
 
         it("reverts on zero debt token address", async () => {
             await expect(
-                marketFactory.createPegStabilityModule(
+                argoFactory.createPegStabilityModule(
                     owner,
                     ethers.constants.AddressZero,
                     reserveToken.address,
@@ -127,7 +127,7 @@ describe("MarketFactory", () => {
 
         it("reverts on zero reserve token address", async () => {
             await expect(
-                marketFactory.createPegStabilityModule(
+                argoFactory.createPegStabilityModule(
                     owner,
                     debtToken.address,
                     ethers.constants.AddressZero,
@@ -140,7 +140,7 @@ describe("MarketFactory", () => {
 
         it("reverts on zero treasury address", async () => {
             await expect(
-                marketFactory.createPegStabilityModule(
+                argoFactory.createPegStabilityModule(
                     owner,
                     debtToken.address,
                     reserveToken.address,
@@ -148,47 +148,6 @@ describe("MarketFactory", () => {
                     450, // 0.45%
                     ethers.constants.AddressZero
                 )
-            ).to.be.revertedWith("0x0 treasury");
-        });
-    });
-
-    describe("createToken", () => {
-        let owner: string;
-        let treasury: string;
-
-        beforeEach(async () => {
-            owner = ethers.Wallet.createRandom().address;
-            treasury = ethers.Wallet.createRandom().address;
-        });
-
-        it("creates initialized token and emits CreateToken event", async () => {
-            for (let i = 0; i < 3; i++) {
-                const result = await marketFactory.createToken(owner, treasury, "A Stable", "FOO");
-
-                expect(result).to.emit(marketFactory, "CreateToken");
-
-                const tokenAddr = (
-                    await marketFactory.queryFilter(marketFactory.filters.CreateToken(), result.blockHash)
-                )[0].args.token;
-
-                const token = await ethers.getContractAt("DebtToken", tokenAddr);
-
-                expect(await token.owner()).to.eq(owner);
-                expect(await token.treasury()).to.eq(treasury);
-                expect(await token.name()).to.eq("A Stable");
-                expect(await token.symbol()).to.eq("FOO");
-            }
-        });
-
-        it("reverts on zero owner address", async () => {
-            await expect(
-                marketFactory.createToken(ethers.constants.AddressZero, treasury, "A Stable", "FOO")
-            ).to.be.revertedWith("0x0 owner");
-        });
-
-        it("reverts on zero treasury address", async () => {
-            await expect(
-                marketFactory.createToken(owner, ethers.constants.AddressZero, "A Stable", "FOO")
             ).to.be.revertedWith("0x0 treasury");
         });
     });
